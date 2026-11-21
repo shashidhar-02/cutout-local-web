@@ -1,9 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  experimental: {
-    serverComponentsExternalPackages: ['@huggingface/transformers', 'onnxruntime-node', 'sharp'],
-  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
@@ -11,11 +8,6 @@ const nextConfig = {
         fs: false,
         path: false,
         crypto: false,
-      };
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        'sharp$': false,
-        'onnxruntime-node$': false,
       };
     }
     return config;

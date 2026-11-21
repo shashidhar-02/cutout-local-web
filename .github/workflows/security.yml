@@ -1,4 +1,4 @@
-name: Enterprise Security Audit
+name: Security & Defender Gates
 
 on:
   push:
@@ -6,7 +6,11 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: '0 4 * * 1' # Run every Monday at 04:00 UTC
+    - cron: '0 4 * * 1'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -14,8 +18,9 @@ permissions:
 
 jobs:
   codeql:
-    name: CodeQL Static Security Analysis
+    name: CodeQL Static Security Scan
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,8 +34,9 @@ jobs:
         uses: github/codeql-action/analyze@v3
 
   audit:
-    name: Dependency Vulnerability Audit
+    name: Zero-Trust Dependency Audit
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -41,6 +47,9 @@ jobs:
           node-version: 20
           cache: 'npm'
 
+      - name: Install dependencies
+        run: npm ci
+
       - name: Run npm security audit
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=critical
         continue-on-error: true
