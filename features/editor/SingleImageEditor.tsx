@@ -8,17 +8,18 @@ import {
   Zap,
   Cpu,
   Clock,
-  Layers,
   CheckCircle2,
   AlertCircle,
-  Eye,
+  SlidersHorizontal,
 } from 'lucide-react';
 import {
   BackgroundSettings,
   CropSettings,
   ExportFormat,
+  QualityMode,
   ResizeSettings,
   SegmentationResult,
+  SmartPreset,
 } from '@/lib/types';
 import { SegmentationClient } from '@/lib/segmentation-client';
 import {
@@ -30,6 +31,7 @@ import { ComparisonSlider } from './ComparisonSlider';
 import { BackgroundPicker } from './BackgroundPicker';
 import { CropSettings as CropSettingsComponent } from './CropSettings';
 import { ResizeSettingsPanel } from './ResizeSettingsModal';
+import { SmartPresetsSelector } from './SmartPresetsSelector';
 import confetti from 'canvas-confetti';
 
 interface SingleImageEditorProps {
@@ -47,11 +49,15 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
   const [status, setStatus] = useState<'loading-model' | 'processing' | 'done' | 'error'>(
     'loading-model'
   );
-  const [statusMessage, setStatusMessage] = useState<string>('Preparing local inference runtime...');
+  const [statusMessage, setStatusMessage] = useState<string>('Preparing Cutout AI runtime...');
   const [loadProgress, setLoadProgress] = useState<number>(0);
   const [inferenceResult, setInferenceResult] = useState<SegmentationResult | null>(null);
 
-  // Transparent master foreground canvas
+  // Quality Mode: Fast | Balanced | Quality
+  const [qualityMode, setQualityMode] = useState<QualityMode>('balanced');
+  const [activePresetId, setActivePresetId] = useState<string | undefined>();
+
+  // Master canvas & preview
   const transparentCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
 
@@ -79,7 +85,50 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
   const [quality, setQuality] = useState<number>(0.95);
   const [isExporting, setIsExporting] = useState<boolean>(false);
 
-  // Step 1: Initialize image and run local segmentation
+  // Run segmentation
+  const executeSegmentation = useCallback(
+    async (url: string, width: number, height: number, mode: QualityMode) => {
+      setStatus('loading-model');
+      setStatusMessage('Initializing local neural model...');
+
+      try {
+        const client = SegmentationClient.getInstance();
+
+        const unsubStatus = client.subscribeStatus((st, text) => {
+          setStatus(st === 'processing' ? 'processing' : 'loading-model');
+          if (text) setStatusMessage(text);
+        });
+
+        const unsubProgress = client.subscribeProgress((p) => {
+          if (p.progress) setLoadProgress(Math.round(p.progress));
+        });
+
+        const result = await client.removeBackground(url, width, height, mode);
+        unsubStatus();
+        unsubProgress();
+
+        setInferenceResult(result);
+
+        const img = new Image();
+        img.src = url;
+        await new Promise((r) => (img.onload = r));
+
+        const transparentCanvas = applyAlphaMask(img, result.maskBuffer, width, height);
+        transparentCanvasRef.current = transparentCanvas;
+
+        const dataUrl = transparentCanvas.toDataURL('image/png');
+        setPreviewUrl(dataUrl);
+        setStatus('done');
+      } catch (err: any) {
+        console.error(err);
+        setStatus('error');
+        setStatusMessage(err?.message || 'Segmentation failed');
+      }
+    },
+    []
+  );
+
+  // Step 1: Load image on mount
   useEffect(() => {
     let isCancelled = false;
     const url = URL.createObjectURL(file);
@@ -87,63 +136,40 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
 
     const img = new Image();
     img.src = url;
-    img.onload = async () => {
+    img.onload = () => {
       if (isCancelled) return;
       const width = img.naturalWidth;
       const height = img.naturalHeight;
       setImgDimensions({ width, height });
       setResize((prev) => ({ ...prev, width, height }));
-
-      try {
-        const client = SegmentationClient.getInstance();
-
-        // Subscribe to real-time status and download progress
-        const unsubStatus = client.subscribeStatus((st, text) => {
-          if (!isCancelled) {
-            setStatus(st === 'processing' ? 'processing' : 'loading-model');
-            if (text) setStatusMessage(text);
-          }
-        });
-
-        const unsubProgress = client.subscribeProgress((p) => {
-          if (!isCancelled && p.progress) {
-            setLoadProgress(Math.round(p.progress));
-          }
-        });
-
-        // Run client-side background removal
-        const result = await client.removeBackground(url, width, height);
-        unsubStatus();
-        unsubProgress();
-
-        if (isCancelled) return;
-
-        setInferenceResult(result);
-
-        // Apply alpha mask to produce transparent foreground canvas
-        const transparentCanvas = applyAlphaMask(img, result.maskBuffer, width, height);
-        transparentCanvasRef.current = transparentCanvas;
-
-        // Render preview URL
-        const dataUrl = transparentCanvas.toDataURL('image/png');
-        setPreviewUrl(dataUrl);
-        setStatus('done');
-      } catch (err: any) {
-        if (!isCancelled) {
-          console.error(err);
-          setStatus('error');
-          setStatusMessage(err?.message || 'Segmentation failed');
-        }
-      }
+      executeSegmentation(url, width, height, qualityMode);
     };
 
     return () => {
       isCancelled = true;
       URL.revokeObjectURL(url);
     };
-  }, [file]);
+  }, [file, executeSegmentation, qualityMode]);
 
-  // Step 2: Re-render composited preview when background settings change
+  // Handle Quality Mode switch
+  const handleQualityModeChange = (newMode: QualityMode) => {
+    if (newMode === qualityMode) return;
+    setQualityMode(newMode);
+    if (originalUrl && imgDimensions.width > 0) {
+      executeSegmentation(originalUrl, imgDimensions.width, imgDimensions.height, newMode);
+    }
+  };
+
+  // Handle Smart Preset Apply
+  const handleApplyPreset = (preset: SmartPreset) => {
+    setActivePresetId(preset.id);
+    setFormat(preset.format);
+    setBackground(preset.background);
+    setCrop(preset.crop);
+    setResize(preset.resize);
+  };
+
+  // Re-render preview canvas on visual adjustments
   const updatePreview = useCallback(async () => {
     if (!transparentCanvasRef.current || status !== 'done') return;
 
@@ -169,7 +195,7 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
     updatePreview();
   }, [updatePreview]);
 
-  // Step 3: Handle Final Download
+  // Handle Final Download
   const handleDownload = async () => {
     if (!transparentCanvasRef.current) return;
     setIsExporting(true);
@@ -184,16 +210,13 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
 
       await downloadCanvasFile(finalCanvas, file.name, format, quality);
 
-      // Trigger celebratory confetti
       try {
         confetti({
           particleCount: 40,
           spread: 60,
           origin: { y: 0.8 },
         });
-      } catch {
-        // Safe fallback
-      }
+      } catch {}
     } catch (err) {
       console.error('Download failed:', err);
     } finally {
@@ -216,6 +239,26 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
           <span className="text-xs text-gray-500 font-medium truncate max-w-[200px] sm:max-w-xs">
             {file.name}
           </span>
+        </div>
+
+        {/* Quality Controls Selector */}
+        <div className="flex items-center gap-2">
+          <div className="inline-flex p-1 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-medium">
+            {(['fast', 'balanced', 'quality'] as QualityMode[]).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => handleQualityModeChange(mode)}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all capitalize ${
+                  qualityMode === mode
+                    ? 'bg-white dark:bg-gray-700 text-brand-700 dark:text-brand-300 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Inference Execution Metadata */}
@@ -248,7 +291,7 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
 
               <div className="space-y-1">
                 <h4 className="text-base font-bold text-gray-900 dark:text-white">
-                  {status === 'loading-model' ? 'Loading AI Model' : 'Processing Image'}
+                  {status === 'loading-model' ? 'Downloading AI model' : 'Running AI on your device'}
                 </h4>
                 <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm">
                   {statusMessage}
@@ -256,11 +299,14 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
               </div>
 
               {loadProgress > 0 && loadProgress < 100 && (
-                <div className="w-48 bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
-                  <div
-                    className="bg-brand-500 h-full transition-all duration-200"
-                    style={{ width: `${loadProgress}%` }}
-                  />
+                <div className="w-56 space-y-1">
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                    <div
+                      className="bg-brand-500 h-full transition-all duration-200"
+                      style={{ width: `${loadProgress}%` }}
+                    />
+                  </div>
+                  <p className="text-[11px] font-mono text-gray-400">{loadProgress}% cached</p>
                 </div>
               )}
             </div>
@@ -279,7 +325,7 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <ComparisonSlider
                 originalUrl={originalUrl}
                 processedUrl={previewUrl}
@@ -290,6 +336,12 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
               <p className="text-center text-xs text-gray-400 select-none">
                 ↔ Drag slider to inspect edge boundaries and subject segmentation
               </p>
+
+              {/* Smart Export Presets Bar */}
+              <SmartPresetsSelector
+                onApplyPreset={handleApplyPreset}
+                activePresetId={activePresetId}
+              />
             </div>
           )}
         </div>
@@ -311,7 +363,6 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
             onQualityChange={setQuality}
           />
 
-          {/* Primary Download CTA */}
           <button
             type="button"
             onClick={handleDownload}

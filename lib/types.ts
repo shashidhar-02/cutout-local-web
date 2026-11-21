@@ -7,6 +7,8 @@ export type ProcessingStatus =
   | 'complete'
   | 'error';
 
+export type QualityMode = 'fast' | 'balanced' | 'quality';
+
 export interface HardwareInfo {
   mode: DeviceMode;
   adapterName?: string;
@@ -29,6 +31,7 @@ export interface SegmentationResult {
   height: number;
   inferenceTimeMs: number;
   deviceUsed: 'webgpu' | 'wasm';
+  qualityMode: QualityMode;
 }
 
 export interface ProcessedItem {
@@ -46,6 +49,7 @@ export interface ProcessedItem {
     maskBuffer: Uint8ClampedArray;
     inferenceTimeMs: number;
     deviceUsed: 'webgpu' | 'wasm';
+    qualityMode: QualityMode;
     transparentDataUrl: string;
     compositedDataUrl?: string;
   };
@@ -66,6 +70,7 @@ export interface BackgroundSettings {
 export interface CropSettings {
   autoCrop: boolean;
   padding: number; // in pixels
+  aspectRatio?: 'original' | '1:1' | '4:3' | '16:9' | 'custom';
 }
 
 export interface ResizeSettings {
@@ -84,3 +89,26 @@ export interface ExportOptions {
   resize: ResizeSettings;
   fileName: string;
 }
+
+export type SmartPresetId = 
+  | 'profile-photo'
+  | 'passport-photo'
+  | 'ecommerce-product'
+  | 'marketplace-listing'
+  | 'social-media'
+  | 'linkedin-avatar'
+  | 'presentation-slide'
+  | 'sticker-transparent';
+
+export interface SmartPreset {
+  id: SmartPresetId;
+  name: string;
+  description: string;
+  iconName: string;
+  format: ExportFormat;
+  background: BackgroundSettings;
+  crop: CropSettings;
+  resize: ResizeSettings;
+}
+
+export type LanguageCode = 'en' | 'hi' | 'te';

@@ -1,4 +1,4 @@
-import { DeviceMode, HardwareInfo, ModelProgressUpdate, SegmentationResult } from './types';
+import { DeviceMode, HardwareInfo, ModelProgressUpdate, QualityMode, SegmentationResult } from './types';
 import { detectHardwareCapabilities } from './hardware';
 
 export class SegmentationClient {
@@ -47,14 +47,13 @@ export class SegmentationClient {
     }
 
     if (this.isInitializing) {
-      // Wait for existing initialization to settle
       await new Promise<void>((resolve) => {
         const interval = setInterval(() => {
           if (this.isReady || !this.isInitializing) {
             clearInterval(interval);
             resolve();
           }
-        }, 100);
+        }, 50);
       });
       return this.hardwareInfo!;
     }
@@ -62,13 +61,11 @@ export class SegmentationClient {
     this.isInitializing = true;
     this.notifyStatus('detecting', 'Analyzing browser graphics and WebAssembly capabilities...');
 
-    // 1. Detect hardware
     this.hardwareInfo = await detectHardwareCapabilities();
     this.activeDevice = preferredDevice || (this.hardwareInfo.isWebGpu ? 'webgpu' : 'wasm');
 
-    // 2. Initialize worker
-    try {
-      if (typeof window !== 'undefined' && typeof Worker !== 'undefined') {
+    if (typeof window !== 'undefined' && typeof Worker !== 'undefined') {
+      try {
         this.worker = new Worker(
           new URL('../workers/segmentation.worker.ts', import.meta.url),
           { type: 'module' }
@@ -102,18 +99,21 @@ export class SegmentationClient {
         };
 
         this.worker.onerror = (err) => {
-          console.error('Segmentation worker initialization error:', err);
+          console.error('Segmentation worker error:', err);
           this.notifyStatus('error', 'Worker failed to initialize.');
         };
 
-        // Send INIT command to worker
         this.worker.postMessage({
           type: 'INIT',
           payload: { device: this.activeDevice },
         });
+      } catch (err: any) {
+        console.warn('Worker instantiation failed. Fallback mode enabled.', err);
+        this.isReady = true;
+        this.isInitializing = false;
       }
-    } catch (err: any) {
-      console.warn('Worker instantiation failed. Fallback mode enabled.', err);
+    } else {
+      // Non-worker environment (JSDOM / SSR / Test runner)
       this.isReady = true;
       this.isInitializing = false;
     }
@@ -132,7 +132,8 @@ export class SegmentationClient {
   public async removeBackground(
     imageSource: string | Blob,
     width: number,
-    height: number
+    height: number,
+    qualityMode: QualityMode = 'balanced'
   ): Promise<SegmentationResult> {
     if (!this.isReady) {
       await this.initialize(this.activeDevice);
@@ -150,27 +151,24 @@ export class SegmentationClient {
             image: imageSource,
             width,
             height,
+            qualityMode,
           },
         });
       });
     } else {
-      // High-performance local fallback if worker is unavailable (e.g., test environments or unsupported worker)
-      return this.computeFallbackSegmentation(imageSource, width, height);
+      return this.computeFallbackSegmentation(imageSource, width, height, qualityMode);
     }
   }
 
-  /**
-   * Fallback segmentation algorithm for automated tests and non-worker environments
-   */
   private async computeFallbackSegmentation(
     imageSource: string | Blob,
     width: number,
-    height: number
+    height: number,
+    qualityMode: QualityMode
   ): Promise<SegmentationResult> {
     const startTime = performance.now();
     const maskBuffer = new Uint8ClampedArray(width * height);
 
-    // Creates an elliptical central mask with soft edges
     const centerX = width / 2;
     const centerY = height / 2;
     const radiusX = width * 0.45;
@@ -199,6 +197,7 @@ export class SegmentationClient {
       height,
       inferenceTimeMs: Math.round(performance.now() - startTime),
       deviceUsed: 'wasm',
+      qualityMode,
     };
   }
 

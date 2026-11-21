@@ -18,7 +18,6 @@ async function loadTransformers() {
   if (transformersLib) return transformersLib;
 
   try {
-    // Dynamic import evaluated at runtime in browser worker context
     const dynamicImport = new Function('url', 'return import(url)');
     transformersLib = await dynamicImport(TRANSFORMERS_CDN_URL);
     transformersLib.env.allowLocalModels = false;
@@ -51,7 +50,6 @@ async function loadModel(preferredDevice: 'webgpu' | 'wasm' = 'webgpu') {
   };
 
   try {
-    // Attempt preferred device (e.g. WebGPU)
     model = await tf.AutoModel.from_pretrained(DEFAULT_MODEL, {
       device: currentDevice,
       progress_callback: progressCallback,
@@ -89,7 +87,8 @@ async function loadModel(preferredDevice: 'webgpu' | 'wasm' = 'webgpu') {
 async function segmentImage(
   imageDataUriOrBlob: string | Blob,
   targetWidth: number,
-  targetHeight: number
+  targetHeight: number,
+  qualityMode: 'fast' | 'balanced' | 'quality' = 'balanced'
 ) {
   const tf = await loadTransformers();
 
@@ -102,7 +101,7 @@ async function segmentImage(
   workerScope.postMessage({
     type: 'status',
     status: 'processing',
-    text: 'Running AI background segmentation...',
+    text: `Running ${qualityMode.toUpperCase()} AI segmentation...`,
   });
 
   // 1. Read input image into RawImage format
@@ -120,13 +119,25 @@ async function segmentImage(
   const origWidth = targetWidth || rawImage.width;
   const origHeight = targetHeight || rawImage.height;
 
-  // 2. Preprocess using AutoProcessor
-  const imageInputs = await processor(rawImage);
+  // 2. Preprocess with resolution according to qualityMode
+  let processTarget = rawImage;
+  if (qualityMode === 'fast') {
+    // Downscale for rapid inference on lower-spec hardware
+    const scale = Math.min(1.0, 512 / Math.max(rawImage.width, rawImage.height));
+    if (scale < 1.0) {
+      processTarget = await rawImage.resize(
+        Math.round(rawImage.width * scale),
+        Math.round(rawImage.height * scale)
+      );
+    }
+  }
+
+  const imageInputs = await processor(processTarget);
 
   // 3. Run neural model inference
   const { output } = await model(imageInputs);
 
-  // 4. Output post-processing: extract mask tensor and resize to original dimensions
+  // 4. Output post-processing: extract mask tensor and restore to original image dimensions
   const maskTensor = output[0][0]; // 1 x 1 x H x W -> H x W
   const maskRaw = await tf.RawImage.fromTensor(maskTensor.mul(255).to('uint8')).resize(
     origWidth,
@@ -135,8 +146,17 @@ async function segmentImage(
 
   const inferenceTimeMs = Math.round(performance.now() - startTime);
 
-  // RawImage.data is Uint8Array of [grayscale] or [rgba]
   const maskBuffer = new Uint8ClampedArray(maskRaw.data.buffer);
+
+  // For 'quality' mode, apply gentle edge refinement on transition boundaries
+  if (qualityMode === 'quality') {
+    for (let i = 0; i < maskBuffer.length; i++) {
+      const v = maskBuffer[i];
+      // Sharpen definite foreground and background, smoothly interpolate transitions
+      if (v > 240) maskBuffer[i] = 255;
+      else if (v < 15) maskBuffer[i] = 0;
+    }
+  }
 
   return {
     maskBuffer,
@@ -144,6 +164,7 @@ async function segmentImage(
     height: origHeight,
     inferenceTimeMs,
     deviceUsed: currentDevice,
+    qualityMode,
   };
 }
 
@@ -158,10 +179,10 @@ workerScope.addEventListener('message', async (event: MessageEvent) => {
       const result = await segmentImage(
         payload.image,
         payload.width,
-        payload.height
+        payload.height,
+        payload.qualityMode || 'balanced'
       );
 
-      // Transfer the buffer for zero-copy performance
       workerScope.postMessage(
         {
           type: 'RESULT',
@@ -171,6 +192,7 @@ workerScope.addEventListener('message', async (event: MessageEvent) => {
             height: result.height,
             inferenceTimeMs: result.inferenceTimeMs,
             deviceUsed: result.deviceUsed,
+            qualityMode: result.qualityMode,
             maskBuffer: result.maskBuffer,
           },
         },

@@ -1,17 +1,26 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Scissors, Moon, Sun } from 'lucide-react';
-import { HardwareInfo } from '@/lib/types';
+import Link from 'next/link';
+import { Scissors, Moon, Sun, Globe } from 'lucide-react';
+import { HardwareInfo, LanguageCode } from '@/lib/types';
 import { DeviceBadge } from '@/features/device-status/DeviceBadge';
 import { PrivacyBadge } from './PrivacyBadge';
+import { TRANSLATIONS } from '@/lib/i18n';
 
 interface HeaderProps {
   hardware: HardwareInfo | null;
+  onLanguageChange?: (lang: LanguageCode) => void;
+  currentLang?: LanguageCode;
 }
 
-export const Header: React.FC<HeaderProps> = ({ hardware }) => {
+export const Header: React.FC<HeaderProps> = ({
+  hardware,
+  onLanguageChange,
+  currentLang = 'en',
+}) => {
   const [isDark, setIsDark] = useState<boolean>(false);
+  const [lang, setLang] = useState<LanguageCode>(currentLang);
 
   useEffect(() => {
     if (
@@ -38,32 +47,72 @@ export const Header: React.FC<HeaderProps> = ({ hardware }) => {
     }
   };
 
+  const handleLangToggle = (selected: LanguageCode) => {
+    setLang(selected);
+    if (onLanguageChange) onLanguageChange(selected);
+  };
+
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Brand identity */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 text-white shadow-md shadow-brand-500/20">
-            <Scissors className="w-5 h-5 -rotate-45" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-xl tracking-tight text-gray-900 dark:text-white">
-                Cutout
-              </span>
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300">
-                Local AI
-              </span>
+        <div className="flex items-center gap-6">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 text-white shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform">
+              <Scissors className="w-5 h-5 -rotate-45" />
             </div>
-            <p className="hidden md:block text-xs text-gray-500 dark:text-gray-400 font-medium">
-              Remove backgrounds. Keep your photos private.
-            </p>
-          </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-xl tracking-tight text-gray-900 dark:text-white">
+                  {t.appName}
+                </span>
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300">
+                  Local AI
+                </span>
+              </div>
+              <p className="hidden md:block text-[11px] text-gray-500 dark:text-gray-400 font-medium">
+                {t.tagline}
+              </p>
+            </div>
+          </Link>
+
+          {/* Navigation Links */}
+          <nav className="hidden lg:flex items-center gap-4 text-xs font-semibold text-gray-600 dark:text-gray-300">
+            <Link href="/how-it-works" className="hover:text-brand-600 transition-colors">
+              How It Works
+            </Link>
+            <Link href="/privacy" className="hover:text-brand-600 transition-colors">
+              Privacy Architecture
+            </Link>
+            <Link href="/batch-background-remover" className="hover:text-brand-600 transition-colors">
+              Batch Mode
+            </Link>
+          </nav>
         </div>
 
-        {/* Runtime Badges and Links */}
+        {/* Runtime Badges, Language Selector & Links */}
         <div className="flex items-center gap-2.5 sm:gap-3">
-          <PrivacyBadge className="hidden lg:inline-flex" />
+          {/* Language Switcher */}
+          <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5 text-xs font-semibold">
+            {(['en', 'hi', 'te'] as LanguageCode[]).map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => handleLangToggle(l)}
+                className={`px-2 py-1 rounded-md uppercase transition-all ${
+                  lang === l
+                    ? 'bg-white dark:bg-gray-700 text-brand-700 dark:text-brand-300 shadow-xs'
+                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+
+          <PrivacyBadge className="hidden xl:inline-flex" />
           <DeviceBadge hardware={hardware} />
 
           <div className="h-5 w-px bg-gray-200 dark:bg-gray-800 hidden sm:block" />

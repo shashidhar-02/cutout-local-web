@@ -87,7 +87,7 @@ export const BatchProcessingView: React.FC<BatchProcessingViewProps> = ({
         const height = img.naturalHeight;
 
         try {
-          const result = await client.removeBackground(item.originalUrl, width, height);
+          const result = await client.removeBackground(item.originalUrl, width, height, 'balanced');
           const transparentCanvas = applyAlphaMask(img, result.maskBuffer, width, height);
           const transparentDataUrl = transparentCanvas.toDataURL('image/png');
 
@@ -100,6 +100,7 @@ export const BatchProcessingView: React.FC<BatchProcessingViewProps> = ({
               maskBuffer: result.maskBuffer,
               inferenceTimeMs: result.inferenceTimeMs,
               deviceUsed: result.deviceUsed,
+              qualityMode: result.qualityMode,
               transparentDataUrl,
             },
           });
@@ -130,7 +131,6 @@ export const BatchProcessingView: React.FC<BatchProcessingViewProps> = ({
     for (let i = 0; i < updatedItems.length; i++) {
       if (updatedItems[i].status === 'complete') continue;
 
-      // Mark current item as processing
       setItems((current) =>
         current.map((it, idx) => (idx === i ? { ...it, status: 'processing' } : it))
       );
