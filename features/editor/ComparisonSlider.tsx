@@ -73,12 +73,14 @@ export const ComparisonSlider: React.FC<ComparisonSliderProps> = ({
           showCheckerboard ? 'bg-checkerboard-pattern dark:bg-checkerboard-pattern-dark bg-checkerboard' : ''
         }`}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={processedUrl}
-          alt="Cutout background removed"
-          className="max-h-[580px] w-auto max-w-full object-contain pointer-events-none"
-        />
+        {processedUrl && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={processedUrl}
+            alt="Cutout background removed"
+            className="max-h-[580px] w-auto max-w-full object-contain pointer-events-none"
+          />
+        )}
       </div>
 
       {/* Foreground layer (Original Image) clipped to slider position */}
@@ -86,12 +88,14 @@ export const ComparisonSlider: React.FC<ComparisonSliderProps> = ({
         className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center"
         style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={originalUrl}
-          alt="Original photo"
-          className="max-h-[580px] w-auto max-w-full object-contain pointer-events-none"
-        />
+        {originalUrl && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={originalUrl}
+            alt="Original photo"
+            className="max-h-[580px] w-auto max-w-full object-contain pointer-events-none"
+          />
+        )}
       </div>
 
       {/* Vertical divider handle */}

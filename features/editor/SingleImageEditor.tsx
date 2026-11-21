@@ -150,9 +150,12 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
     [t.loadingModel]
   );
 
-  // Load and read input file
+  const urlRef = useRef<string>('');
+
+  // Load and read input file once when file prop changes
   useEffect(() => {
     const url = URL.createObjectURL(file);
+    urlRef.current = url;
     setOriginalUrl(url);
 
     const img = new Image();
@@ -163,9 +166,13 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
     img.src = url;
 
     return () => {
-      URL.revokeObjectURL(url);
+      if (urlRef.current) {
+        URL.revokeObjectURL(urlRef.current);
+        urlRef.current = '';
+      }
     };
-  }, [file, executeSegmentation, qualityMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [file]);
 
   // Re-render preview canvas whenever background or crop changes
   useEffect(() => {
@@ -189,12 +196,13 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
     };
   }, [background, crop, status]);
 
-  // Handle Quality Mode Change
+  // Handle Quality Mode Change cleanly without revoking image URL
   const handleQualityModeChange = (newMode: QualityMode) => {
     if (newMode === qualityMode) return;
     setQualityMode(newMode);
-    if (originalUrl && imgDimensions.width > 0) {
-      executeSegmentation(originalUrl, imgDimensions.width, imgDimensions.height, newMode);
+    const activeUrl = urlRef.current || originalUrl;
+    if (activeUrl && imgDimensions.width > 0) {
+      executeSegmentation(activeUrl, imgDimensions.width, imgDimensions.height, newMode);
     }
   };
 

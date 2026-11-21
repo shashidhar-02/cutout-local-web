@@ -2,14 +2,15 @@
 
 const workerScope = self as any;
 
-// RMBG-1.4 model identifier
-const DEFAULT_MODEL = 'briaai/RMBG-1.4';
+const PRIMARY_MODEL = 'briaai/RMBG-1.4';
+const LITE_MODEL = 'Xenova/modnet';
 const TRANSFORMERS_CDN_URL = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.1.2';
 
 let transformersLib: any = null;
-let model: any = null;
-let processor: any = null;
+let segmenterPipeline: any = null;
+let activeModelName: string = PRIMARY_MODEL;
 let currentDevice: 'webgpu' | 'wasm' = 'webgpu';
+let isInitializing: boolean = false;
 
 /**
  * Dynamically loads Transformers.js library inside Web Worker
@@ -30,14 +31,21 @@ async function loadTransformers() {
 }
 
 /**
- * Initializes the AI segmentation model and processor
+ * Initializes the AI segmentation pipeline with WebGPU and multi-threaded WASM fallback
  */
-async function loadModel(preferredDevice: 'webgpu' | 'wasm' = 'webgpu') {
+async function loadPipeline(preferredDevice: 'webgpu' | 'wasm' = 'webgpu', useLite: boolean = false) {
+  if (segmenterPipeline && currentDevice === preferredDevice && (!useLite || activeModelName === LITE_MODEL)) {
+    return segmenterPipeline;
+  }
+
+  isInitializing = true;
   currentDevice = preferredDevice;
+  const targetModel = useLite ? LITE_MODEL : PRIMARY_MODEL;
+
   workerScope.postMessage({
     type: 'status',
     status: 'loading-model',
-    text: `Initializing segmentation model (${currentDevice.toUpperCase()})...`,
+    text: `Loading ${targetModel.split('/')[1]} (${currentDevice.toUpperCase()})...`,
   });
 
   const tf = await loadTransformers();
@@ -50,14 +58,19 @@ async function loadModel(preferredDevice: 'webgpu' | 'wasm' = 'webgpu') {
   };
 
   try {
-    model = await tf.AutoModel.from_pretrained(DEFAULT_MODEL, {
+    // Prefer FP16 on WebGPU for 2x faster inference and 50% download size; Q8 on WASM for fast INT8 execution
+    const dtype = currentDevice === 'webgpu' ? 'fp16' : 'q8';
+    segmenterPipeline = await tf.pipeline('image-segmentation', targetModel, {
       device: currentDevice,
+      dtype,
       progress_callback: progressCallback,
     });
-    processor = await tf.AutoProcessor.from_pretrained(DEFAULT_MODEL);
+    activeModelName = targetModel;
   } catch (error) {
+    console.warn(`Failed to initialize ${targetModel} with ${currentDevice}:`, error);
+
+    // Fallback 1: If WebGPU failed, fallback to WASM
     if (currentDevice === 'webgpu') {
-      console.warn('WebGPU model initialization failed. Falling back to WASM/CPU.', error);
       currentDevice = 'wasm';
       workerScope.postMessage({
         type: 'status',
@@ -65,24 +78,50 @@ async function loadModel(preferredDevice: 'webgpu' | 'wasm' = 'webgpu') {
         text: 'WebGPU unavailable. Falling back to multi-threaded WASM...',
       });
 
-      model = await tf.AutoModel.from_pretrained(DEFAULT_MODEL, {
+      try {
+        segmenterPipeline = await tf.pipeline('image-segmentation', targetModel, {
+          device: 'wasm',
+          dtype: 'q8',
+          progress_callback: progressCallback,
+        });
+        activeModelName = targetModel;
+      } catch (wasmError) {
+        // Fallback 2: If primary model failed, try ultra-compact lite model (25MB)
+        if (targetModel !== LITE_MODEL) {
+          console.warn('Falling back to ultra-compact lite model:', wasmError);
+          activeModelName = LITE_MODEL;
+          segmenterPipeline = await tf.pipeline('image-segmentation', LITE_MODEL, {
+            device: 'wasm',
+            progress_callback: progressCallback,
+          });
+        } else {
+          throw wasmError;
+        }
+      }
+    } else if (targetModel !== LITE_MODEL) {
+      // Try lite model directly on failure
+      activeModelName = LITE_MODEL;
+      segmenterPipeline = await tf.pipeline('image-segmentation', LITE_MODEL, {
         device: 'wasm',
         progress_callback: progressCallback,
       });
-      processor = await tf.AutoProcessor.from_pretrained(DEFAULT_MODEL);
     } else {
       throw error;
     }
   }
 
+  isInitializing = false;
   workerScope.postMessage({
     type: 'ready',
     device: currentDevice,
+    model: activeModelName,
   });
+
+  return segmenterPipeline;
 }
 
 /**
- * Preprocesses, runs inference, and extracts the alpha mask
+ * Preprocesses, runs neural inference, and extracts alpha mask
  */
 async function segmentImage(
   imageDataUriOrBlob: string | Blob,
@@ -92,19 +131,18 @@ async function segmentImage(
 ) {
   const tf = await loadTransformers();
 
-  if (!model || !processor) {
-    await loadModel(currentDevice);
-  }
+  // For fast mode, use lite model if needed for instant responsiveness
+  const pipe = await loadPipeline(currentDevice, qualityMode === 'fast');
 
   const startTime = performance.now();
 
   workerScope.postMessage({
     type: 'status',
     status: 'processing',
-    text: `Running ${qualityMode.toUpperCase()} AI segmentation...`,
+    text: `Running ${qualityMode.toUpperCase()} AI segmentation (${currentDevice.toUpperCase()})...`,
   });
 
-  // 1. Read input image into RawImage format
+  // 1. Load image into RawImage format
   let rawImage: any;
   if (typeof imageDataUriOrBlob === 'string') {
     rawImage = await tf.RawImage.fromURL(imageDataUriOrBlob);
@@ -119,44 +157,73 @@ async function segmentImage(
   const origWidth = targetWidth || rawImage.width;
   const origHeight = targetHeight || rawImage.height;
 
-  // 2. Preprocess with resolution according to qualityMode
-  let processTarget = rawImage;
+  // 2. Scale for performance if needed
+  let inputImage = rawImage;
   if (qualityMode === 'fast') {
-    // Downscale for rapid inference on lower-spec hardware
     const scale = Math.min(1.0, 512 / Math.max(rawImage.width, rawImage.height));
     if (scale < 1.0) {
-      processTarget = await rawImage.resize(
+      inputImage = await rawImage.resize(
+        Math.round(rawImage.width * scale),
+        Math.round(rawImage.height * scale)
+      );
+    }
+  } else if (qualityMode === 'balanced') {
+    const scale = Math.min(1.0, 1024 / Math.max(rawImage.width, rawImage.height));
+    if (scale < 1.0) {
+      inputImage = await rawImage.resize(
         Math.round(rawImage.width * scale),
         Math.round(rawImage.height * scale)
       );
     }
   }
 
-  const imageInputs = await processor(processTarget);
+  // 3. Run neural pipeline segmentation
+  const output = await pipe(inputImage);
 
-  // 3. Run neural model inference
-  const { output } = await model(imageInputs);
+  // 4. Extract mask RawImage from output
+  let maskRawImage: any = null;
+  if (Array.isArray(output) && output.length > 0) {
+    maskRawImage = output[0].mask || output[0];
+  } else if (output && output.mask) {
+    maskRawImage = output.mask;
+  } else {
+    maskRawImage = output;
+  }
 
-  // 4. Output post-processing: extract mask tensor and restore to original image dimensions
-  const maskTensor = output[0][0]; // 1 x 1 x H x W -> H x W
-  const maskRaw = await tf.RawImage.fromTensor(maskTensor.mul(255).to('uint8')).resize(
-    origWidth,
-    origHeight
-  );
+  // Resize mask back to exact original target image dimensions
+  const resizedMask = await maskRawImage.resize(origWidth, origHeight);
 
-  const inferenceTimeMs = Math.round(performance.now() - startTime);
+  // 5. Build alpha mask buffer (single-channel 0..255)
+  const totalPixels = origWidth * origHeight;
+  const maskBuffer = new Uint8ClampedArray(totalPixels);
+  const maskData = resizedMask.data;
+  const channels = resizedMask.channels || Math.round(maskData.length / totalPixels) || 1;
 
-  const maskBuffer = new Uint8ClampedArray(maskRaw.data.buffer);
+  if (channels === 1) {
+    maskBuffer.set(maskData.subarray(0, totalPixels));
+  } else if (channels === 4) {
+    // If RGBA, use the alpha channel (or green/luminance if grayscale RGB)
+    for (let i = 0; i < totalPixels; i++) {
+      maskBuffer[i] = maskData[i * 4 + 3];
+    }
+  } else {
+    // 3 channels: take luminance
+    for (let i = 0; i < totalPixels; i++) {
+      const idx = i * channels;
+      maskBuffer[i] = Math.round(0.299 * maskData[idx] + 0.587 * maskData[idx + 1] + 0.114 * maskData[idx + 2]);
+    }
+  }
 
-  // For 'quality' mode, apply gentle edge refinement on transition boundaries
+  // 6. Quality mode edge refinement
   if (qualityMode === 'quality') {
     for (let i = 0; i < maskBuffer.length; i++) {
       const v = maskBuffer[i];
-      // Sharpen definite foreground and background, smoothly interpolate transitions
       if (v > 240) maskBuffer[i] = 255;
       else if (v < 15) maskBuffer[i] = 0;
     }
   }
+
+  const inferenceTimeMs = Math.round(performance.now() - startTime);
 
   return {
     maskBuffer,
@@ -174,7 +241,7 @@ workerScope.addEventListener('message', async (event: MessageEvent) => {
 
   try {
     if (type === 'INIT') {
-      await loadModel(payload?.device || 'webgpu');
+      await loadPipeline(payload?.device || 'webgpu');
     } else if (type === 'SEGMENT') {
       const result = await segmentImage(
         payload.image,
