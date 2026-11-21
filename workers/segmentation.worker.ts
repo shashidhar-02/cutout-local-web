@@ -131,9 +131,8 @@ async function segmentImage(
 ) {
   const tf = await loadTransformers();
 
-  // For fast/balanced mode, use the ultra-compact lite model (~6MB-25MB) for near-instant responsiveness; use RMBG-1.4 for Ultra HD
-  const useLite = qualityMode !== 'quality';
-  const pipe = await loadPipeline(currentDevice, useLite);
+  // For fast mode, use lite model if needed for instant responsiveness
+  const pipe = await loadPipeline(currentDevice, qualityMode === 'fast');
 
   const startTime = performance.now();
 
@@ -242,13 +241,7 @@ workerScope.addEventListener('message', async (event: MessageEvent) => {
 
   try {
     if (type === 'INIT') {
-      currentDevice = payload?.device || 'webgpu';
-      // Signal ready immediately on demand without blocking on network download
-      workerScope.postMessage({
-        type: 'ready',
-        device: currentDevice,
-        model: 'ready-on-demand',
-      });
+      await loadPipeline(payload?.device || 'webgpu');
     } else if (type === 'SEGMENT') {
       const result = await segmentImage(
         payload.image,

@@ -24,7 +24,6 @@ import {
 import { SegmentationClient } from '@/lib/segmentation-client';
 import {
   applyAlphaMask,
-  computeInstantCutoutMask,
   downloadCanvasFile,
   renderFinalComposition,
 } from '@/lib/image-processing';
@@ -50,16 +49,14 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
   });
 
   const [status, setStatus] = useState<'loading-model' | 'processing' | 'done' | 'error'>(
-    'processing'
+    'loading-model'
   );
-  const [statusMessage, setStatusMessage] = useState<string>('Segmenting image locally...');
+  const [statusMessage, setStatusMessage] = useState<string>(t.loadingModel);
   const [loadProgress, setLoadProgress] = useState<number>(0);
   const [inferenceResult, setInferenceResult] = useState<SegmentationResult | null>(null);
 
-  // Quality Mode: Fast (Default Instant <40ms) | Balanced (Neural AI) | Quality (Ultra HD)
-  const [qualityMode, setQualityMode] = useState<QualityMode>('fast');
-  const [isRefining, setIsRefining] = useState<boolean>(false);
-  const [refiningText, setRefiningText] = useState<string>('');
+  // Quality Mode: Fast | Balanced | Quality
+  const [qualityMode, setQualityMode] = useState<QualityMode>('balanced');
   const [activePresetId, setActivePresetId] = useState<string | undefined>();
 
   // Master canvas & preview
@@ -93,74 +90,15 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
   // Run segmentation
   const executeSegmentation = useCallback(
     async (url: string, width: number, height: number, mode: QualityMode) => {
-      // 1. Instant Zero-Download Computer Vision Engine (<35ms execution)
-      if (mode === 'fast') {
-        setStatus('processing');
-        setStatusMessage('Segmenting background in real-time...');
-
-        try {
-          const startTime = performance.now();
-          const imgEl = new Image();
-          imgEl.src = url;
-          await new Promise((resolve) => {
-            if (imgEl.complete) resolve(true);
-            else imgEl.onload = () => resolve(true);
-          });
-
-          const maskBuffer = computeInstantCutoutMask(imgEl, width, height);
-          const compCanvas = applyAlphaMask(imgEl, maskBuffer, width, height);
-          transparentCanvasRef.current = compCanvas;
-
-          // Immediately render preview blob to guarantee instant feedback
-          const finalCanvas = await renderFinalComposition(compCanvas, background, crop);
-          finalCanvas.toBlob((blob) => {
-            if (blob) {
-              setPreviewUrl(URL.createObjectURL(blob));
-            }
-          }, 'image/png');
-
-          const elapsed = Math.max(1, Math.round(performance.now() - startTime));
-          setInferenceResult({
-            maskBuffer,
-            width,
-            height,
-            inferenceTimeMs: elapsed,
-            deviceUsed: 'wasm',
-            qualityMode: 'fast',
-          });
-          setStatus('done');
-
-          // Trigger confetti
-          try {
-            confetti({
-              particleCount: 35,
-              spread: 45,
-              origin: { y: 0.7 },
-              colors: ['#10b981', '#3b82f6', '#8b5cf6'],
-            });
-          } catch {}
-          return;
-        } catch (err: any) {
-          console.error('Instant cutout error:', err);
-          setStatus('error');
-          setStatusMessage('Failed to segment image.');
-          return;
-        }
-      }
-
-      // 2. Neural AI Edge Refinement (Optional non-blocking background inference)
-      setIsRefining(true);
-      setRefiningText(
-        mode === 'balanced'
-          ? 'Refining edges with Neural AI in background...'
-          : 'Refining edges with Ultra HD Neural AI...'
-      );
+      setStatus('loading-model');
+      setStatusMessage(t.loadingModel);
 
       try {
         const client = SegmentationClient.getInstance();
 
         const unsubStatus = client.subscribeStatus((st, text) => {
-          if (text) setRefiningText(text);
+          setStatus(st === 'processing' ? 'processing' : 'loading-model');
+          if (text) setStatusMessage(text);
         });
 
         const unsubProgress = client.subscribeProgress((p) => {
@@ -176,6 +114,7 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
 
         setInferenceResult(result);
 
+        // Alpha mask composition
         const imgEl = new Image();
         imgEl.src = url;
         await new Promise((resolve) => {
@@ -183,36 +122,32 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
           else imgEl.onload = () => resolve(true);
         });
 
-        const compCanvas = applyAlphaMask(imgEl, result.maskBuffer, width, height);
+        const compCanvas = applyAlphaMask(
+          imgEl,
+          result.maskBuffer,
+          width,
+          height
+        );
+
         transparentCanvasRef.current = compCanvas;
-
-        const finalCanvas = await renderFinalComposition(compCanvas, background, crop);
-        finalCanvas.toBlob((blob) => {
-          if (blob) {
-            setPreviewUrl(URL.createObjectURL(blob));
-          }
-        }, 'image/png');
-
         setStatus('done');
-      } catch (err: any) {
-        console.warn('Neural refinement error, retaining instant cutout:', err);
-        // Retain the existing instant cutout so user is never blocked
-        if (!transparentCanvasRef.current) {
-          const imgEl = new Image();
-          imgEl.src = url;
-          await new Promise((resolve) => {
-            if (imgEl.complete) resolve(true);
-            else imgEl.onload = () => resolve(true);
+
+        // Confetti celebration on completion
+        try {
+          confetti({
+            particleCount: 40,
+            spread: 50,
+            origin: { y: 0.7 },
+            colors: ['#10b981', '#3b82f6', '#8b5cf6'],
           });
-          const maskBuffer = computeInstantCutoutMask(imgEl, width, height);
-          transparentCanvasRef.current = applyAlphaMask(imgEl, maskBuffer, width, height);
-          setStatus('done');
-        }
-      } finally {
-        setIsRefining(false);
+        } catch {}
+      } catch (err: any) {
+        console.error('Segmentation error:', err);
+        setStatus('error');
+        setStatusMessage(err?.message || 'Failed to process image locally.');
       }
     },
-    [background, crop]
+    [t.loadingModel]
   );
 
   const urlRef = useRef<string>('');
@@ -318,9 +253,9 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
   };
 
   const getQualityLabel = (mode: QualityMode) => {
-    if (mode === 'fast') return `⚡ ${t.fast} (<40ms)`;
-    if (mode === 'balanced') return `🚀 ${t.balanced}`;
-    return `💎 ${t.quality}`;
+    if (mode === 'fast') return t.fast;
+    if (mode === 'balanced') return t.balanced;
+    return t.quality;
   };
 
   return (
@@ -340,25 +275,15 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
           </span>
         </div>
 
-        {/* Quality Controls Selector & Live Refine Status */}
-        <div className="flex flex-wrap items-center gap-3">
-          {isRefining && (
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-950/80 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800 text-xs font-semibold shadow-xs">
-              <Sparkles className="w-3.5 h-3.5 text-brand-500 animate-spin" />
-              <span>{refiningText || 'Refining edges...'}</span>
-              {loadProgress > 0 && loadProgress < 100 && (
-                <span className="text-[10px] font-mono">({loadProgress}%)</span>
-              )}
-            </div>
-          )}
-
+        {/* Quality Controls Selector */}
+        <div className="flex items-center gap-2">
           <div className="inline-flex p-1 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-medium">
             {(['fast', 'balanced', 'quality'] as QualityMode[]).map((mode) => (
               <button
                 key={mode}
                 type="button"
                 onClick={() => handleQualityModeChange(mode)}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all capitalize ${
                   qualityMode === mode
                     ? 'bg-white dark:bg-gray-700 text-brand-700 dark:text-brand-300 shadow-sm'
                     : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
@@ -381,7 +306,7 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
               {inferenceResult.inferenceTimeMs}ms
             </span>
             <span className="uppercase px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[10px] font-bold">
-              {inferenceResult.qualityMode === 'fast' ? 'Instant Engine' : inferenceResult.deviceUsed}
+              {inferenceResult.deviceUsed}
             </span>
           </div>
         )}
