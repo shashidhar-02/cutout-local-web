@@ -128,7 +128,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* GitHub Repository */}
           <a
-            href="https://github.com/your-username/cutout-local-web"
+            href="https://github.com/shashidhar-02/cutout-local-web"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="GitHub Repository"

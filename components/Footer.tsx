@@ -83,7 +83,7 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
               <li>
                 <a
-                  href="https://github.com/your-username/cutout-local-web"
+                  href="https://github.com/shashidhar-02/cutout-local-web"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-brand-600 dark:hover:text-brand-400 transition-colors inline-flex items-center gap-1"
@@ -102,7 +102,7 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <a
-                  href="https://github.com/your-username/cutout-local-web/issues"
+                  href="https://github.com/shashidhar-02/cutout-local-web/issues"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-brand-600 dark:hover:text-brand-400 transition-colors"

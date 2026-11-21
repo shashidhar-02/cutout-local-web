@@ -16,7 +16,7 @@ Ensure you have Node.js 18+ installed.
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/cutout-local-web.git
+git clone https://github.com/shashidhar-02/cutout-local-web.git
 cd cutout-local-web
 
 # Install dependencies

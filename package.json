@@ -6,10 +6,10 @@
   "homepage": "https://YOUR-VERCEL-DOMAIN.vercel.app",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/cutout-local-web.git"
+    "url": "https://github.com/shashidhar-02/cutout-local-web.git"
   },
   "bugs": {
-    "url": "https://github.com/your-username/cutout-local-web/issues"
+    "url": "https://github.com/shashidhar-02/cutout-local-web/issues"
   },
   "license": "MIT",
   "scripts": {
