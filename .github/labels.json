@@ -1,0 +1,17 @@
+[
+  { "name": "bug", "color": "d73a4a", "description": "Something isn't working" },
+  { "name": "enhancement", "color": "a2eeef", "description": "New feature or improvement" },
+  { "name": "good-first-issue", "color": "7057ff", "description": "Good for newcomers" },
+  { "name": "help-wanted", "color": "008672", "description": "Extra attention is needed" },
+  { "name": "documentation", "color": "0075ca", "description": "Improvements or additions to documentation" },
+  { "name": "model", "color": "e99695", "description": "Model weights, architectures, or evaluation" },
+  { "name": "webgpu", "color": "1d76db", "description": "WebGPU execution provider and shader pipeline" },
+  { "name": "wasm", "color": "f9d0c4", "description": "WebAssembly CPU runtime and fallback" },
+  { "name": "performance", "color": "d4c5f9", "description": "Latency, memory, or throughput improvements" },
+  { "name": "privacy", "color": "0e8a16", "description": "Client-side isolation and zero-transmission guarantees" },
+  { "name": "accessibility", "color": "c2e0c6", "description": "Screen reader, keyboard, and ARIA enhancements" },
+  { "name": "mobile", "color": "5319e7", "description": "Touch gestures and responsive mobile layout" },
+  { "name": "batch-processing", "color": "bfd4f2", "description": "Multi-image queue and ZIP bundling" },
+  { "name": "image-quality", "color": "fbca04", "description": "Alpha edge feathering and mask fidelity" },
+  { "name": "browser-compatibility", "color": "c5def5", "description": "Cross-browser engine support and fallbacks" }
+]
