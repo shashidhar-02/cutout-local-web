@@ -108,9 +108,9 @@ export const Header: React.FC<HeaderProps> = ({ hardware }) => {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-gray-200/80 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 backdrop-blur-md transition-colors shadow-xs">
       <TopBannerBar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4 flex-nowrap">
         {/* Brand identity */}
-        <div className="flex items-center gap-6 shrink-0">
+        <div className="flex items-center gap-4 xl:gap-6 shrink-0">
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 text-white shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform">
               <Scissors className="w-4 h-4 sm:w-5 sm:h-5 -rotate-45" />
@@ -126,7 +126,7 @@ export const Header: React.FC<HeaderProps> = ({ hardware }) => {
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-5 text-xs font-semibold text-gray-600 dark:text-gray-300">
+          <nav className="hidden lg:flex items-center gap-3 xl:gap-5 text-xs font-semibold text-gray-600 dark:text-gray-300">
             <Link
               href="/"
               className={`transition-colors py-1 ${

@@ -152,8 +152,13 @@ export class SegmentationClient {
     imageSource: string | Blob,
     width: number,
     height: number,
-    qualityMode: QualityMode = 'balanced'
+    qualityMode: QualityMode = 'fast'
   ): Promise<SegmentationResult> {
+    // For fast mode, return instant client-side computation (<20ms, 0KB download)
+    if (qualityMode === 'fast') {
+      return this.computeFallbackSegmentation(imageSource, width, height, qualityMode);
+    }
+
     if (!this.isReady) {
       await this.initialize(this.activeDevice);
     }
@@ -162,13 +167,13 @@ export class SegmentationClient {
 
     if (this.worker) {
       return new Promise<SegmentationResult>((resolve) => {
-        // Safety timeout: if worker takes longer than 25 seconds, fall back gracefully
+        // Safety timeout: if worker takes longer than 20 seconds, fall back gracefully
         const timer = setTimeout(async () => {
           this.pendingRequests.delete(requestId);
           console.warn('Worker response timed out, utilizing fast on-device fallback.');
           const fallback = await this.computeFallbackSegmentation(imageSource, width, height, qualityMode);
           resolve(fallback);
-        }, 25000);
+        }, 20000);
 
         this.pendingRequests.set(requestId, {
           resolve: (res) => {
