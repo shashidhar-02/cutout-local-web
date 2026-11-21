@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { I18nProvider } from '@/lib/i18n-context';
-import { TopBannerBar } from '@/components/TopBannerBar';
 
 export const metadata: Metadata = {
   title: 'Cutout | Remove backgrounds. Keep your photos private.',
@@ -58,6 +57,15 @@ export const metadata: Metadata = {
       'Private, browser-based AI background removal. WebGPU/WASM inference runs on your device — no uploads, accounts, subscriptions or watermarks.',
     images: ['/og-image.svg'],
   },
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '32x32' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/icon.svg',
+  },
 };
 
 const jsonLd = {
@@ -108,10 +116,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col bg-slate-50 dark:bg-gray-950 text-slate-900 dark:text-slate-100 transition-colors">
-        <I18nProvider>
-          <TopBannerBar />
-          {children}
-        </I18nProvider>
+        <I18nProvider>{children}</I18nProvider>
       </body>
     </html>
   );

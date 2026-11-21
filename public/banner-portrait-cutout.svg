@@ -1,132 +1,170 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" width="100%" height="100%">
   <defs>
-    <!-- Alpha Checkerboard for transparent side -->
-    <pattern id="checker-port" width="24" height="24" patternUnits="userSpaceOnUse">
+    <!-- Crisp Alpha Checkerboard for Cutout Transparent side -->
+    <pattern id="checker-port2" width="24" height="24" patternUnits="userSpaceOnUse">
       <rect width="12" height="12" fill="#f8fafc" />
       <rect x="12" width="12" height="12" fill="#e2e8f0" />
       <rect y="12" width="12" height="12" fill="#e2e8f0" />
       <rect x="12" width="12" height="12" fill="#f8fafc" />
     </pattern>
 
-    <!-- Natural Outdoor Bokeh Lighting for Original Portrait -->
-    <linearGradient id="outdoor-bokeh" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#064e3b" />
-      <stop offset="45%" stop-color="#047857" />
-      <stop offset="85%" stop-color="#10b981" />
-      <stop offset="100%" stop-color="#fbbf24" />
+    <!-- Warm Cinematic Studio Lighting for Original side -->
+    <linearGradient id="warm-studio" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="35%" stop-color="#1e1b4b" />
+      <stop offset="70%" stop-color="#431407" />
+      <stop offset="100%" stop-color="#78350f" />
     </linearGradient>
 
-    <!-- Skin tones and clothing gradients -->
-    <linearGradient id="skin" x1="20%" y1="0%" x2="80%" y2="100%">
+    <!-- Studio Rim Light Glows -->
+    <radialGradient id="rim-glow" cx="20%" cy="25%" r="60%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.6" />
+      <stop offset="60%" stop-color="#f59e0b" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="ambient-cyan" cx="80%" cy="70%" r="50%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Realistic Skin, Hair, Clothing Shading -->
+    <linearGradient id="face-tone" x1="20%" y1="0%" x2="80%" y2="100%">
       <stop offset="0%" stop-color="#ffedd5" />
-      <stop offset="60%" stop-color="#fed7aa" />
-      <stop offset="100%" stop-color="#fba868" />
-    </linearGradient>
-    <linearGradient id="hair" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#3b2014" />
-      <stop offset="70%" stop-color="#1c110a" />
-      <stop offset="100%" stop-color="#0f0703" />
-    </linearGradient>
-    <linearGradient id="jacket" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1e293b" />
-      <stop offset="100%" stop-color="#0f172a" />
+      <stop offset="40%" stop-color="#fed7aa" />
+      <stop offset="85%" stop-color="#fdba74" />
+      <stop offset="100%" stop-color="#fb923c" />
     </linearGradient>
 
-    <filter id="portrait-shadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="20" stdDeviation="18" flood-color="#022c22" flood-opacity="0.35" />
+    <linearGradient id="natural-hair" x1="10%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#2d1810" />
+      <stop offset="40%" stop-color="#1c100a" />
+      <stop offset="85%" stop-color="#0f0704" />
+      <stop offset="100%" stop-color="#050201" />
+    </linearGradient>
+
+    <linearGradient id="silk-jacket" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="50%" stop-color="#0369a1" />
+      <stop offset="100%" stop-color="#075985" />
+    </linearGradient>
+
+    <filter id="soft-depth-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="28" stdDeviation="24" flood-color="#020617" flood-opacity="0.4" />
     </filter>
 
-    <clipPath id="left-port-clip">
+    <clipPath id="port-left-clip">
       <rect x="0" y="0" width="600" height="560" />
     </clipPath>
-    <clipPath id="right-port-clip">
+    <clipPath id="port-right-clip">
       <rect x="600" y="0" width="600" height="560" />
     </clipPath>
   </defs>
 
-  <!-- Left Side: Original Scenic Blurred Foliage & Sun Flare -->
-  <g clip-path="url(#left-port-clip)">
-    <rect width="1200" height="560" fill="url(#outdoor-bokeh)" />
-    <!-- Sun flare / sunbeams -->
-    <circle cx="120" cy="80" r="140" fill="#fef08a" opacity="0.45" filter="blur(40px)" />
-    <circle cx="340" cy="220" r="180" fill="#34d399" opacity="0.3" filter="blur(50px)" />
-    <circle cx="480" cy="420" r="130" fill="#f59e0b" opacity="0.35" filter="blur(35px)" />
+  <!-- LEFT HALF: ORIGINAL STUDIO BACKDROP -->
+  <g clip-path="url(#port-left-clip)">
+    <rect width="1200" height="560" fill="url(#warm-studio)" />
+    <!-- Floating Cinematic Studio Bokeh / Dust Flares -->
+    <circle cx="160" cy="120" r="130" fill="url(#rim-glow)" />
+    <circle cx="480" cy="390" r="170" fill="url(#ambient-cyan)" />
+    <circle cx="280" cy="460" r="90" fill="#f59e0b" opacity="0.3" filter="blur(25px)" />
+    <circle cx="80" cy="380" r="75" fill="#ec4899" opacity="0.25" filter="blur(20px)" />
   </g>
 
-  <!-- Right Side: Clean Alpha Checkerboard (Transparent Background) -->
-  <g clip-path="url(#right-port-clip)">
-    <rect x="600" y="0" width="600" height="560" fill="url(#checker-port)" />
+  <!-- RIGHT HALF: CLEAN ALPHA TRANSPARENCY CHECKERBOARD -->
+  <g clip-path="url(#port-right-clip)">
+    <rect x="600" y="0" width="600" height="560" fill="url(#checker-port2)" />
   </g>
 
-  <!-- THE SUBJECT: PROFESSIONAL PORTRAIT WITH INTRICATE EDGES -->
-  <g id="portrait-subject" transform="translate(600, 310) scale(1.18)">
-    <!-- Shoulders & Coat -->
-    <path d="M -220,240 C -200,160 -150,110 -60,95 L 0,110 L 60,95 C 150,110 200,160 220,240 Z"
-          fill="url(#jacket)" filter="url(#portrait-shadow)" />
+  <!-- THE PHOTOGRAPHIC PORTRAIT SUBJECT (Rendered Across Split Boundary) -->
+  <g id="photographic-portrait" transform="translate(600, 310) scale(1.18)">
+    <!-- Contact Ground Depth Shadow -->
+    <ellipse cx="0" cy="210" rx="220" ry="26" fill="#020617" opacity="0.3" filter="blur(18px)" />
+
+    <!-- Tailored Silk Blazer Shoulders & Lapels -->
+    <path d="M -230,230 C -210,150 -160,105 -70,95 L 0,115 L 70,95 C 160,105 210,150 230,230 Z"
+          fill="url(#silk-jacket)" filter="url(#soft-depth-shadow)" />
     
-    <!-- White Inner Shirt Collar -->
-    <path d="M -50,97 L 0,145 L 50,97 L 25,65 L -25,65 Z" fill="#f8fafc" />
+    <!-- White Inner Collar & Neckline -->
+    <path d="M -45,95 L 0,140 L 45,95 L 20,65 L -20,65 Z" fill="#ffffff" />
+    <path d="M -25,95 L 0,125 L 25,95 Z" fill="#e2e8f0" />
 
-    <!-- Neck -->
-    <path d="M -35,68 L -35,25 C -35,15 -20,5 0,5 C 20,5 35,15 35,25 L 35,68 Z" fill="url(#skin)" />
-    <path d="M -30,45 C -15,55 15,55 30,45 L 32,68 C 15,75 -15,75 -32,68 Z" fill="#ea580c" opacity="0.12" />
+    <!-- Neck & Jawline Shadow -->
+    <path d="M -30,68 L -30,25 C -30,12 -15,4 0,4 C 15,4 30,12 30,25 L 30,68 Z" fill="url(#face-tone)" />
+    <path d="M -28,45 C -15,55 15,55 28,45 L 30,68 C 15,75 -15,75 -30,68 Z" fill="#ea580c" opacity="0.14" />
 
-    <!-- Face Oval -->
-    <path d="M -55,-25 C -55,35 -35,68 0,68 C 35,68 55,35 55,-25 C 55,-70 35,-95 0,-95 C -35,-95 -55,-70 -55,-25 Z"
-          fill="url(#skin)" />
+    <!-- Head & Cheeks (Soft Anatomical Contour) -->
+    <path d="M -54,-20 C -54,32 -34,64 0,64 C 34,64 54,32 54,-20 C 54,-68 34,-92 0,-92 C -34,-92 -54,-68 -54,-20 Z"
+          fill="url(#face-tone)" />
 
-    <!-- Hair Silhouette with Fine Strands -->
-    <path d="M -72,-20 C -78,-60 -65,-120 0,-125 C 65,-120 78,-60 72,-20 C 68,10 65,30 52,45 C 58,20 62,-10 60,-40 C 58,-80 40,-105 0,-105 C -40,-105 -58,-80 -60,-40 C -62,-10 -58,20 -52,45 C -65,30 -68,10 -72,-20 Z"
-          fill="url(#hair)" />
-    <!-- Intricate Flyaway Hair Edge Strands (Demonstrating RMBG Edge Sharpness) -->
-    <path d="M -68,-65 Q -85,-85 -70,-105 Q -55,-125 -30,-132" stroke="#1c110a" stroke-width="2.5" fill="none" stroke-linecap="round" />
-    <path d="M 68,-65 Q 85,-85 70,-105 Q 55,-125 30,-132" stroke="#1c110a" stroke-width="2.5" fill="none" stroke-linecap="round" />
-    <path d="M -50,-115 Q -40,-138 -15,-135" stroke="#1c110a" stroke-width="2" fill="none" stroke-linecap="round" />
-    <path d="M 50,-115 Q 40,-138 15,-135" stroke="#1c110a" stroke-width="2" fill="none" stroke-linecap="round" />
+    <!-- High-Resolution Hair Volume with Natural Strands & Highlights -->
+    <!-- Base Deep Hair Silhouette -->
+    <path d="M -75,-15 C -82,-60 -68,-120 0,-128 C 68,-120 82,-60 75,-15 C 70,25 65,45 52,65 C 60,35 64,5 62,-35 C 60,-75 42,-105 0,-105 C -42,-105 -60,-75 -62,-35 C -64,5 -60,35 -52,65 C -65,45 -70,25 -75,-15 Z"
+          fill="url(#natural-hair)" />
 
-    <!-- Ears -->
-    <ellipse cx="-56" cy="-15" rx="8" ry="14" fill="url(#skin)" />
-    <ellipse cx="56" cy="-15" rx="8" ry="14" fill="url(#skin)" />
-
-    <!-- Eyeglasses (Sharp Edge Benchmark) -->
-    <g stroke="#0f172a" stroke-width="3.5" fill="none">
-      <rect x="-42" y="-32" width="34" height="24" rx="7" />
-      <rect x="8" y="-32" width="34" height="24" rx="7" />
-      <path d="M -8,-20 L 8,-20" />
-      <path d="M -42,-22 L -56,-24" />
-      <path d="M 42,-22 L 56,-24" />
+    <!-- Fine Hair Flyaway Edges (Testing AI Edge Sharpness & Transparency) -->
+    <g stroke="#1c100a" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.85">
+      <path d="M -72,-50 Q -92,-75 -76,-105 Q -60,-130 -30,-135" />
+      <path d="M -60,-90 Q -80,-115 -50,-138 Q -30,-142 -10,-138" />
+      <path d="M 72,-50 Q 92,-75 76,-105 Q 60,-130 30,-135" />
+      <path d="M 60,-90 Q 80,-115 50,-138 Q 30,-142 10,-138" />
+      <path d="M -40,-125 Q -25,-145 0,-142" />
+      <path d="M 40,-125 Q 25,-145 0,-142" />
+      <path d="M -74,-20 Q -88,10 -78,35" />
+      <path d="M 74,-20 Q 88,10 78,35" />
     </g>
 
-    <!-- Eyes -->
-    <circle cx="-25" cy="-20" r="4" fill="#0f172a" />
-    <circle cx="25" cy="-20" r="4" fill="#0f172a" />
-    <circle cx="-23" cy="-22" r="1.5" fill="#ffffff" />
-    <circle cx="27" cy="-22" r="1.5" fill="#ffffff" />
+    <!-- Warm Hair Ambient Rim Highlight on Left -->
+    <path d="M -65,-40 C -68,-80 -50,-110 -15,-122" stroke="#f59e0b" stroke-width="2.5" fill="none" opacity="0.6" stroke-linecap="round" />
 
-    <!-- Smile -->
-    <path d="M -18,18 Q 0,30 18,18" stroke="#be123c" stroke-width="3" stroke-linecap="round" fill="none" />
+    <!-- Subtle Eyebrows & Eyes -->
+    <path d="M -38,-35 Q -24,-42 -10,-36" stroke="#1c100a" stroke-width="2.5" stroke-linecap="round" fill="none" />
+    <path d="M 10,-36 Q 24,-42 38,-35" stroke="#1c100a" stroke-width="2.5" stroke-linecap="round" fill="none" />
+    
+    <!-- Eyelids & Eyes -->
+    <ellipse cx="-24" cy="-24" rx="7" ry="4" fill="#0f172a" />
+    <circle cx="-22" cy="-25" r="1.5" fill="#ffffff" />
+    <ellipse cx="24" cy="-24" rx="7" ry="4" fill="#0f172a" />
+    <circle cx="26" cy="-25" r="1.5" fill="#ffffff" />
+
+    <!-- Nose Bridge Contour -->
+    <path d="M 0,-24 L -1,-2 L 4,5" stroke="#c2410c" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.3" />
+
+    <!-- Lips with Natural Gloss -->
+    <path d="M -16,22 Q 0,28 16,22 Q 0,34 -16,22 Z" fill="#e11d48" opacity="0.8" />
+    <path d="M -8,23 Q 0,26 8,23" stroke="#fecdd3" stroke-width="1" stroke-linecap="round" fill="none" />
   </g>
 
-  <!-- SPLIT LINE -->
+  <!-- SPLIT LINE & FLOATING INTERACTIVE CONTROLLER -->
   <line x1="600" y1="0" x2="600" y2="560" stroke="#ffffff" stroke-width="3" stroke-dasharray="8 6" opacity="0.9" />
   <line x1="600" y1="0" x2="600" y2="560" stroke="#10b981" stroke-width="2" opacity="0.8" />
 
   <!-- Center Slider Knob -->
   <g transform="translate(600, 280)">
-    <circle cx="0" cy="0" r="26" fill="#ffffff" filter="url(#portrait-shadow)" stroke="#10b981" stroke-width="3" />
+    <circle cx="0" cy="0" r="26" fill="#ffffff" filter="url(#soft-depth-shadow)" stroke="#10b981" stroke-width="3" />
     <path d="M -8,0 L -3,-5 L -3,-2 L 3,-2 L 3,-5 L 8,0 L 3,5 L 3,2 L -3,2 L -3,5 Z" fill="#0f172a" />
   </g>
 
   <!-- LABEL BADGES -->
   <g transform="translate(60, 48)">
-    <rect width="210" height="42" rx="21" fill="#0f172a" fill-opacity="0.75" />
+    <rect width="210" height="42" rx="21" fill="#0f172a" fill-opacity="0.8" />
     <circle cx="26" cy="21" r="8" fill="#f59e0b" />
     <text x="46" y="26" fill="#ffffff" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" letter-spacing="0.5">ORIGINAL PHOTO</text>
   </g>
 
   <g transform="translate(850, 48)">
-    <rect width="290" height="42" rx="21" fill="#047857" fill-opacity="0.92" filter="url(#portrait-shadow)" />
+    <rect width="290" height="42" rx="21" fill="#047857" fill-opacity="0.92" filter="url(#soft-depth-shadow)" />
     <circle cx="26" cy="21" r="8" fill="#34d399" />
     <text x="46" y="26" fill="#ffffff" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" letter-spacing="0.5">CUTOUT • TRANSPARENT PNG</text>
+  </g>
+
+  <!-- BOTTOM FLOATING HIGHLIGHTS -->
+  <g transform="translate(60, 490)">
+    <rect width="270" height="34" rx="17" fill="#000000" fill-opacity="0.65" />
+    <text x="20" y="22" fill="#e2e8f0" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600">Complex Lighting & Depth of Field</text>
+  </g>
+
+  <g transform="translate(870, 490)">
+    <rect width="270" height="34" rx="17" fill="#0f172a" fill-opacity="0.8" />
+    <text x="20" y="22" fill="#34d399" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600">⚡ 100% Fine Hair Strand Cutout</text>
   </g>
 </svg>

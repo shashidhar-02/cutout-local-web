@@ -51,14 +51,14 @@ export default function HomePage() {
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-10">
         {/* Hero Section */}
-        <div className="text-center space-y-5 max-w-3xl mx-auto">
+        <div className="text-center space-y-4 max-w-3xl mx-auto">
           {/* Privacy Guarantee Pill */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold shadow-xs">
             <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>{t.privacyPill}</span>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-gray-900 dark:text-white">
               {t.heroTitle}{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-emerald-400">
@@ -87,14 +87,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Visual Hero Banner Showcase Image (Prominently Placed at the Top) */}
-        {!singleFile && batchFiles.length === 0 && (
-          <section className="pt-1 pb-3">
-            <HeroBannerGraphic />
-          </section>
-        )}
-
-        {/* Processing Workspace */}
+        {/* Processing Workspace (Located FIRST at the Top for Immediate Upload) */}
         <section className="space-y-6 max-w-5xl mx-auto">
           {/* Tab Selector */}
           {!singleFile && batchFiles.length === 0 && (
@@ -145,6 +138,24 @@ export default function HomePage() {
             />
           )}
         </section>
+
+        {/* Visual Hero Showcase Banner (Located DOWN Below the Dropzone) */}
+        {!singleFile && batchFiles.length === 0 && (
+          <section className="pt-6 pb-2 max-w-5xl mx-auto space-y-4 border-t border-gray-200/80 dark:border-gray-800">
+            <div className="text-center space-y-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
+                ✨ Interactive Preview
+              </span>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white">
+                Inspect Real-Time Edge & Transparency Quality
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                Drag the center slider ↔ on either sample to test on-device background removal before uploading.
+              </p>
+            </div>
+            <HeroBannerGraphic />
+          </section>
+        )}
 
         {/* How It Works & Privacy Architecture Section */}
         <section className="max-w-5xl mx-auto pt-8 border-t border-gray-200 dark:border-gray-800 space-y-10">
