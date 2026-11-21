@@ -2,8 +2,11 @@
 
 import React from 'react';
 import { ShieldCheck, Lock, Cpu, ExternalLink } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n-context';
 
 export const Footer: React.FC = () => {
+  const { t } = useTranslation();
+
   return (
     <footer className="w-full border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-950/50 mt-16 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -11,21 +14,20 @@ export const Footer: React.FC = () => {
           {/* Brand and Mission */}
           <div className="md:col-span-2 space-y-3">
             <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">
-              Cutout
+              {t.appName}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 max-w-md leading-relaxed">
-              A free, open-source AI background remover that runs 100% locally in your browser.
-              No server uploads, no accounts, no credit limits, and no watermarks.
+              {t.footerDescription}
             </p>
             <div className="flex flex-wrap items-center gap-4 pt-2 text-xs text-gray-500 dark:text-gray-400 font-medium">
               <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                <ShieldCheck className="w-4 h-4" /> Zero Uploads
+                <ShieldCheck className="w-4 h-4" /> {t.noUpload}
               </span>
               <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">
                 <Cpu className="w-4 h-4" /> WebGPU + WASM
               </span>
               <span className="inline-flex items-center gap-1 text-purple-600 dark:text-purple-400">
-                <Lock className="w-4 h-4" /> 100% Private
+                <Lock className="w-4 h-4" /> 100% On-Device
               </span>
             </div>
           </div>
@@ -33,16 +35,15 @@ export const Footer: React.FC = () => {
           {/* Transparency & Safety Links */}
           <div>
             <h4 className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-3">
-              Transparency
+              {t.transparency}
             </h4>
             <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
               <li>
                 <a
-                  href="/PRIVACY.md"
-                  target="_blank"
+                  href="/privacy"
                   className="hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
                 >
-                  Privacy Architecture
+                  {t.menuPrivacy}
                 </a>
               </li>
               <li>
@@ -51,7 +52,7 @@ export const Footer: React.FC = () => {
                   target="_blank"
                   className="hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
                 >
-                  Model Licenses & Limits
+                  {t.modelLicenses}
                 </a>
               </li>
               <li>
@@ -60,7 +61,7 @@ export const Footer: React.FC = () => {
                   target="_blank"
                   className="hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
                 >
-                  Hardware Benchmarks
+                  {t.benchmarks}
                 </a>
               </li>
               <li>
@@ -69,7 +70,7 @@ export const Footer: React.FC = () => {
                   target="_blank"
                   className="hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
                 >
-                  Security Policy
+                  {t.securityPolicy}
                 </a>
               </li>
             </ul>
@@ -78,7 +79,7 @@ export const Footer: React.FC = () => {
           {/* Project & Community Links */}
           <div>
             <h4 className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-3">
-              Open Source
+              {t.openSource}
             </h4>
             <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
               <li>
@@ -97,7 +98,7 @@ export const Footer: React.FC = () => {
                   target="_blank"
                   className="hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
                 >
-                  Contributing Guide
+                  {t.contributing}
                 </a>
               </li>
               <li>
@@ -107,7 +108,7 @@ export const Footer: React.FC = () => {
                   rel="noopener noreferrer"
                   className="hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
                 >
-                  Report an Issue
+                  {t.reportIssue}
                 </a>
               </li>
             </ul>

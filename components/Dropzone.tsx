@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { UploadCloud, Image as ImageIcon, Sparkles, AlertCircle, Copy } from 'lucide-react';
+import { UploadCloud, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n-context';
 
 interface DropzoneProps {
   onFilesSelected: (files: File[]) => void;
@@ -14,6 +15,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
   isMultiple = false,
   disabled = false,
 }) => {
+  const { t } = useTranslation();
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -87,7 +89,6 @@ export const Dropzone: React.FC<DropzoneProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Background: scenic gradient
     const grad = ctx.createLinearGradient(0, 0, 600, 600);
     grad.addColorStop(0, '#f97316');
     grad.addColorStop(0.5, '#e11d48');
@@ -95,7 +96,6 @@ export const Dropzone: React.FC<DropzoneProps> = ({
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 600, 600);
 
-    // Foreground subject
     ctx.fillStyle = primaryColor;
     ctx.shadowColor = 'rgba(0,0,0,0.4)';
     ctx.shadowBlur = 24;
@@ -115,7 +115,6 @@ export const Dropzone: React.FC<DropzoneProps> = ({
       ctx.fill();
     }
 
-    // Add subject label
     ctx.shadowColor = 'transparent';
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 30px system-ui, sans-serif';
@@ -160,20 +159,17 @@ export const Dropzone: React.FC<DropzoneProps> = ({
 
           <div className="space-y-1">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-              {isDragging ? 'Drop your image here' : 'Choose an image or drag & drop'}
+              {isDragging ? 'Drop your image here' : t.dropzoneTitle}
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Supports PNG, JPG, WebP • Paste anytime with{' '}
-              <kbd className="px-1.5 py-0.5 text-xs font-mono bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded text-gray-700 dark:text-gray-300">
-                Ctrl+V
-              </kbd>
+              {t.dropzoneSubtitle}
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow-md shadow-brand-500/25 transition-all">
               <ImageIcon className="w-4 h-4" />
-              Browse Image{isMultiple ? 's' : ''}
+              {t.browseBtn} {isMultiple ? 's' : ''}
             </span>
           </div>
         </div>
@@ -182,7 +178,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
       {/* Sample Quick-Test Photos */}
       <div className="flex flex-wrap items-center justify-center gap-2.5 text-xs text-gray-500 dark:text-gray-400">
         <span className="font-medium flex items-center gap-1">
-          <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Or try a sample:
+          <Sparkles className="w-3.5 h-3.5 text-amber-500" /> {t.trySample}
         </span>
         <button
           type="button"

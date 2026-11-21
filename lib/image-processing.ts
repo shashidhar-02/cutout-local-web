@@ -99,7 +99,13 @@ export async function renderFinalComposition(
   transparentForegroundCanvas: HTMLCanvasElement,
   background: BackgroundSettings,
   crop: CropSettings,
-  resize: ResizeSettings
+  resize: ResizeSettings = {
+    enabled: false,
+    width: 0,
+    height: 0,
+    maintainAspectRatio: true,
+    scalePercent: 100,
+  }
 ): Promise<HTMLCanvasElement> {
   const origWidth = transparentForegroundCanvas.width;
   const origHeight = transparentForegroundCanvas.height;

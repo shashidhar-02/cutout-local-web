@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { I18nProvider } from '@/lib/i18n-context';
+import { TopBannerBar } from '@/components/TopBannerBar';
 
 export const metadata: Metadata = {
   title: 'Cutout | Remove backgrounds. Keep your photos private.',
@@ -58,7 +60,6 @@ export const metadata: Metadata = {
   },
 };
 
-// Schema.org SoftwareApplication JSON-LD
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
@@ -107,7 +108,10 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col bg-slate-50 dark:bg-gray-950 text-slate-900 dark:text-slate-100 transition-colors">
-        {children}
+        <I18nProvider>
+          <TopBannerBar />
+          {children}
+        </I18nProvider>
       </body>
     </html>
   );

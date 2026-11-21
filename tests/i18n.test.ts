@@ -13,5 +13,21 @@ describe('Internationalization (i18n)', () => {
 
     expect(TRANSLATIONS.hi.privacyPill).toContain('डिवाइस');
     expect(TRANSLATIONS.te.privacyPill).toContain('పరికరం');
+
+    expect(TRANSLATIONS.en.heroTitle).toBe('Remove backgrounds.');
+    expect(TRANSLATIONS.hi.heroTitle).toContain('बैकग्राउंड');
+    expect(TRANSLATIONS.te.heroTitle).toContain('బ్యాక్‌గ్రౌండ్');
+
+    expect(TRANSLATIONS.en.menuHowItWorks).toBe('How It Works');
+    expect(TRANSLATIONS.hi.menuHowItWorks).toBe('यह कैसे काम करता है');
+    expect(TRANSLATIONS.te.menuHowItWorks).toBe('ఇది ఎలా పనిచేస్తుంది');
+
+    // Ensure all dictionaries have matching keys
+    const enKeys = Object.keys(TRANSLATIONS.en).sort();
+    const hiKeys = Object.keys(TRANSLATIONS.hi).sort();
+    const teKeys = Object.keys(TRANSLATIONS.te).sort();
+
+    expect(hiKeys).toEqual(enKeys);
+    expect(teKeys).toEqual(enKeys);
   });
 });

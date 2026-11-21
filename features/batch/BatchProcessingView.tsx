@@ -17,6 +17,7 @@ import { ExportFormat, ProcessedItem } from '@/lib/types';
 import { SegmentationClient } from '@/lib/segmentation-client';
 import { applyAlphaMask, canvasToBlob } from '@/lib/image-processing';
 import { BatchItemCard } from './BatchItemCard';
+import { useTranslation } from '@/lib/i18n-context';
 import confetti from 'canvas-confetti';
 
 interface BatchProcessingViewProps {
@@ -28,6 +29,7 @@ export const BatchProcessingView: React.FC<BatchProcessingViewProps> = ({
   initialFiles,
   onClear,
 }) => {
+  const { t } = useTranslation();
   const [items, setItems] = useState<ProcessedItem[]>(() =>
     initialFiles.map((file) => ({
       id: `item_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
@@ -195,14 +197,14 @@ export const BatchProcessingView: React.FC<BatchProcessingViewProps> = ({
           <div className="flex items-center gap-2">
             <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <Layers className="w-4 h-4 text-brand-600" />
-              Batch Processing Queue
+              {t.batchQueue}
             </h3>
             <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300">
               {completedCount} / {items.length} Ready
             </span>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            All images are processed locally on your machine with zero cloud uploads.
+            {t.localPoint1}
           </p>
         </div>
 
@@ -222,7 +224,7 @@ export const BatchProcessingView: React.FC<BatchProcessingViewProps> = ({
             onClick={() => fileInputRef.current?.click()}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs font-semibold shadow-sm transition-colors"
           >
-            <Plus className="w-3.5 h-3.5" /> Add Images
+            <Plus className="w-3.5 h-3.5" /> + {t.browseBtn}
           </button>
 
           <button
@@ -237,11 +239,11 @@ export const BatchProcessingView: React.FC<BatchProcessingViewProps> = ({
           >
             {isProcessingAll ? (
               <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing Queue...
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> {t.processingImage}
               </>
             ) : (
               <>
-                <Play className="w-3.5 h-3.5 fill-current" /> Process All ({items.length - completedCount})
+                <Play className="w-3.5 h-3.5 fill-current" /> {t.processAll} ({items.length - completedCount})
               </>
             )}
           </button>
@@ -259,7 +261,7 @@ export const BatchProcessingView: React.FC<BatchProcessingViewProps> = ({
                 </>
               ) : (
                 <>
-                  <Archive className="w-3.5 h-3.5" /> Download All (.ZIP)
+                  <Archive className="w-3.5 h-3.5" /> {t.downloadZip}
                 </>
               )}
             </button>

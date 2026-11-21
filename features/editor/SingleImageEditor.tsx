@@ -32,6 +32,7 @@ import { BackgroundPicker } from './BackgroundPicker';
 import { CropSettings as CropSettingsComponent } from './CropSettings';
 import { ResizeSettingsPanel } from './ResizeSettingsModal';
 import { SmartPresetsSelector } from './SmartPresetsSelector';
+import { useTranslation } from '@/lib/i18n-context';
 import confetti from 'canvas-confetti';
 
 interface SingleImageEditorProps {
@@ -40,6 +41,7 @@ interface SingleImageEditorProps {
 }
 
 export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onReset }) => {
+  const { t } = useTranslation();
   const [originalUrl, setOriginalUrl] = useState<string>('');
   const [imgDimensions, setImgDimensions] = useState<{ width: number; height: number }>({
     width: 0,
@@ -49,7 +51,7 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
   const [status, setStatus] = useState<'loading-model' | 'processing' | 'done' | 'error'>(
     'loading-model'
   );
-  const [statusMessage, setStatusMessage] = useState<string>('Preparing Cutout AI runtime...');
+  const [statusMessage, setStatusMessage] = useState<string>(t.loadingModel);
   const [loadProgress, setLoadProgress] = useState<number>(0);
   const [inferenceResult, setInferenceResult] = useState<SegmentationResult | null>(null);
 
@@ -89,7 +91,7 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
   const executeSegmentation = useCallback(
     async (url: string, width: number, height: number, mode: QualityMode) => {
       setStatus('loading-model');
-      setStatusMessage('Initializing local neural model...');
+      setStatusMessage(t.loadingModel);
 
       try {
         const client = SegmentationClient.getInstance();
@@ -100,58 +102,94 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
         });
 
         const unsubProgress = client.subscribeProgress((p) => {
-          if (p.progress) setLoadProgress(Math.round(p.progress));
+          if (p && typeof p.progress === 'number') {
+            setLoadProgress(p.progress);
+          }
         });
 
+        // Execute local segmentation in Web Worker
         const result = await client.removeBackground(url, width, height, mode);
         unsubStatus();
         unsubProgress();
 
         setInferenceResult(result);
 
-        const img = new Image();
-        img.src = url;
-        await new Promise((r) => (img.onload = r));
+        // Alpha mask composition
+        const imgEl = new Image();
+        imgEl.src = url;
+        await new Promise((resolve) => {
+          if (imgEl.complete) resolve(true);
+          else imgEl.onload = () => resolve(true);
+        });
 
-        const transparentCanvas = applyAlphaMask(img, result.maskBuffer, width, height);
-        transparentCanvasRef.current = transparentCanvas;
+        const compCanvas = applyAlphaMask(
+          imgEl,
+          result.maskBuffer,
+          width,
+          height
+        );
 
-        const dataUrl = transparentCanvas.toDataURL('image/png');
-        setPreviewUrl(dataUrl);
+        transparentCanvasRef.current = compCanvas;
         setStatus('done');
+
+        // Confetti celebration on completion
+        try {
+          confetti({
+            particleCount: 40,
+            spread: 50,
+            origin: { y: 0.7 },
+            colors: ['#10b981', '#3b82f6', '#8b5cf6'],
+          });
+        } catch {}
       } catch (err: any) {
-        console.error(err);
+        console.error('Segmentation error:', err);
         setStatus('error');
-        setStatusMessage(err?.message || 'Segmentation failed');
+        setStatusMessage(err?.message || 'Failed to process image locally.');
       }
     },
-    []
+    [t.loadingModel]
   );
 
-  // Step 1: Load image on mount
+  // Load and read input file
   useEffect(() => {
-    let isCancelled = false;
     const url = URL.createObjectURL(file);
     setOriginalUrl(url);
 
     const img = new Image();
-    img.src = url;
     img.onload = () => {
-      if (isCancelled) return;
-      const width = img.naturalWidth;
-      const height = img.naturalHeight;
-      setImgDimensions({ width, height });
-      setResize((prev) => ({ ...prev, width, height }));
-      executeSegmentation(url, width, height, qualityMode);
+      setImgDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+      executeSegmentation(url, img.naturalWidth, img.naturalHeight, qualityMode);
     };
+    img.src = url;
 
     return () => {
-      isCancelled = true;
       URL.revokeObjectURL(url);
     };
   }, [file, executeSegmentation, qualityMode]);
 
-  // Handle Quality Mode switch
+  // Re-render preview canvas whenever background or crop changes
+  useEffect(() => {
+    if (!transparentCanvasRef.current || status !== 'done') return;
+
+    let active = true;
+
+    renderFinalComposition(transparentCanvasRef.current, background, crop)
+      .then((finalCanvas) => {
+        if (!active) return;
+        finalCanvas.toBlob((blob) => {
+          if (!active || !blob) return;
+          if (previewUrl) URL.revokeObjectURL(previewUrl);
+          setPreviewUrl(URL.createObjectURL(blob));
+        }, 'image/png');
+      })
+      .catch((err) => console.error('Render error:', err));
+
+    return () => {
+      active = false;
+    };
+  }, [background, crop, status]);
+
+  // Handle Quality Mode Change
   const handleQualityModeChange = (newMode: QualityMode) => {
     if (newMode === qualityMode) return;
     setQualityMode(newMode);
@@ -160,42 +198,29 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
     }
   };
 
-  // Handle Smart Preset Apply
+  // Handle Smart Preset selection
   const handleApplyPreset = (preset: SmartPreset) => {
     setActivePresetId(preset.id);
     setFormat(preset.format);
-    setBackground(preset.background);
-    setCrop(preset.crop);
-    setResize(preset.resize);
+
+    if (preset.background) {
+      setBackground({
+        type: preset.background.type,
+        color: preset.background.color || '#ffffff',
+        blur: 0,
+      });
+    }
+
+    if (preset.crop) {
+      setCrop(preset.crop);
+    }
+
+    if (preset.resize) {
+      setResize(preset.resize);
+    }
   };
 
-  // Re-render preview canvas on visual adjustments
-  const updatePreview = useCallback(async () => {
-    if (!transparentCanvasRef.current || status !== 'done') return;
-
-    if (background.type === 'transparent' && !crop.autoCrop && !resize.enabled) {
-      setPreviewUrl(transparentCanvasRef.current.toDataURL('image/png'));
-      return;
-    }
-
-    try {
-      const composited = await renderFinalComposition(
-        transparentCanvasRef.current,
-        background,
-        crop,
-        resize
-      );
-      setPreviewUrl(composited.toDataURL('image/png'));
-    } catch (e) {
-      console.error('Preview update error:', e);
-    }
-  }, [background, crop, resize, status]);
-
-  useEffect(() => {
-    updatePreview();
-  }, [updatePreview]);
-
-  // Handle Final Download
+  // Export & Download
   const handleDownload = async () => {
     if (!transparentCanvasRef.current) return;
     setIsExporting(true);
@@ -205,23 +230,24 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
         transparentCanvasRef.current,
         background,
         crop,
-        resize
+        resize.enabled ? resize : undefined
       );
 
-      await downloadCanvasFile(finalCanvas, file.name, format, quality);
+      const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+      const downloadFilename = `${baseName}_cutout.${format}`;
 
-      try {
-        confetti({
-          particleCount: 40,
-          spread: 60,
-          origin: { y: 0.8 },
-        });
-      } catch {}
+      await downloadCanvasFile(finalCanvas, downloadFilename, format, quality);
     } catch (err) {
       console.error('Download failed:', err);
     } finally {
       setIsExporting(false);
     }
+  };
+
+  const getQualityLabel = (mode: QualityMode) => {
+    if (mode === 'fast') return t.fast;
+    if (mode === 'balanced') return t.balanced;
+    return t.quality;
   };
 
   return (
@@ -234,7 +260,7 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs font-semibold shadow-sm transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            Upload New Photo
+            {t.uploadNewBtn}
           </button>
           <span className="text-xs text-gray-500 font-medium truncate max-w-[200px] sm:max-w-xs">
             {file.name}
@@ -255,7 +281,7 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
                     : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
-                {mode}
+                {getQualityLabel(mode)}
               </button>
             ))}
           </div>
@@ -265,7 +291,7 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
         {inferenceResult && (
           <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 font-mono">
             <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Segmented
+              <CheckCircle2 className="w-3.5 h-3.5" /> {t.cutoutLabel}
             </span>
             <span className="flex items-center gap-1">
               <Clock className="w-3.5 h-3.5 text-gray-400" />
@@ -291,7 +317,7 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
 
               <div className="space-y-1">
                 <h4 className="text-base font-bold text-gray-900 dark:text-white">
-                  {status === 'loading-model' ? 'Downloading AI model' : 'Running AI on your device'}
+                  {status === 'loading-model' ? t.loadingModel : t.processingImage}
                 </h4>
                 <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm">
                   {statusMessage}
@@ -321,7 +347,7 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
                 onClick={onReset}
                 className="px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-semibold hover:bg-red-700 transition-colors"
               >
-                Try Another Photo
+                {t.uploadNewBtn}
               </button>
             </div>
           ) : (
@@ -374,7 +400,7 @@ export const SingleImageEditor: React.FC<SingleImageEditorProps> = ({ file, onRe
             }`}
           >
             <Download className="w-4 h-4" />
-            {isExporting ? 'Generating File...' : `Download ${format.toUpperCase()}`}
+            {isExporting ? 'Generating File...' : `${t.downloadBtn} ${format.toUpperCase()}`}
           </button>
         </div>
       </div>

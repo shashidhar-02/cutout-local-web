@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" width="100%" height="100%">
+  <defs>
+    <!-- Alpha Checkerboard for transparent side -->
+    <pattern id="checker-port" width="24" height="24" patternUnits="userSpaceOnUse">
+      <rect width="12" height="12" fill="#f8fafc" />
+      <rect x="12" width="12" height="12" fill="#e2e8f0" />
+      <rect y="12" width="12" height="12" fill="#e2e8f0" />
+      <rect x="12" width="12" height="12" fill="#f8fafc" />
+    </pattern>
+
+    <!-- Natural Outdoor Bokeh Lighting for Original Portrait -->
+    <linearGradient id="outdoor-bokeh" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#064e3b" />
+      <stop offset="45%" stop-color="#047857" />
+      <stop offset="85%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#fbbf24" />
+    </linearGradient>
+
+    <!-- Skin tones and clothing gradients -->
+    <linearGradient id="skin" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#ffedd5" />
+      <stop offset="60%" stop-color="#fed7aa" />
+      <stop offset="100%" stop-color="#fba868" />
+    </linearGradient>
+    <linearGradient id="hair" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b2014" />
+      <stop offset="70%" stop-color="#1c110a" />
+      <stop offset="100%" stop-color="#0f0703" />
+    </linearGradient>
+    <linearGradient id="jacket" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+
+    <filter id="portrait-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="20" stdDeviation="18" flood-color="#022c22" flood-opacity="0.35" />
+    </filter>
+
+    <clipPath id="left-port-clip">
+      <rect x="0" y="0" width="600" height="560" />
+    </clipPath>
+    <clipPath id="right-port-clip">
+      <rect x="600" y="0" width="600" height="560" />
+    </clipPath>
+  </defs>
+
+  <!-- Left Side: Original Scenic Blurred Foliage & Sun Flare -->
+  <g clip-path="url(#left-port-clip)">
+    <rect width="1200" height="560" fill="url(#outdoor-bokeh)" />
+    <!-- Sun flare / sunbeams -->
+    <circle cx="120" cy="80" r="140" fill="#fef08a" opacity="0.45" filter="blur(40px)" />
+    <circle cx="340" cy="220" r="180" fill="#34d399" opacity="0.3" filter="blur(50px)" />
+    <circle cx="480" cy="420" r="130" fill="#f59e0b" opacity="0.35" filter="blur(35px)" />
+  </g>
+
+  <!-- Right Side: Clean Alpha Checkerboard (Transparent Background) -->
+  <g clip-path="url(#right-port-clip)">
+    <rect x="600" y="0" width="600" height="560" fill="url(#checker-port)" />
+  </g>
+
+  <!-- THE SUBJECT: PROFESSIONAL PORTRAIT WITH INTRICATE EDGES -->
+  <g id="portrait-subject" transform="translate(600, 310) scale(1.18)">
+    <!-- Shoulders & Coat -->
+    <path d="M -220,240 C -200,160 -150,110 -60,95 L 0,110 L 60,95 C 150,110 200,160 220,240 Z"
+          fill="url(#jacket)" filter="url(#portrait-shadow)" />
+    
+    <!-- White Inner Shirt Collar -->
+    <path d="M -50,97 L 0,145 L 50,97 L 25,65 L -25,65 Z" fill="#f8fafc" />
+
+    <!-- Neck -->
+    <path d="M -35,68 L -35,25 C -35,15 -20,5 0,5 C 20,5 35,15 35,25 L 35,68 Z" fill="url(#skin)" />
+    <path d="M -30,45 C -15,55 15,55 30,45 L 32,68 C 15,75 -15,75 -32,68 Z" fill="#ea580c" opacity="0.12" />
+
+    <!-- Face Oval -->
+    <path d="M -55,-25 C -55,35 -35,68 0,68 C 35,68 55,35 55,-25 C 55,-70 35,-95 0,-95 C -35,-95 -55,-70 -55,-25 Z"
+          fill="url(#skin)" />
+
+    <!-- Hair Silhouette with Fine Strands -->
+    <path d="M -72,-20 C -78,-60 -65,-120 0,-125 C 65,-120 78,-60 72,-20 C 68,10 65,30 52,45 C 58,20 62,-10 60,-40 C 58,-80 40,-105 0,-105 C -40,-105 -58,-80 -60,-40 C -62,-10 -58,20 -52,45 C -65,30 -68,10 -72,-20 Z"
+          fill="url(#hair)" />
+    <!-- Intricate Flyaway Hair Edge Strands (Demonstrating RMBG Edge Sharpness) -->
+    <path d="M -68,-65 Q -85,-85 -70,-105 Q -55,-125 -30,-132" stroke="#1c110a" stroke-width="2.5" fill="none" stroke-linecap="round" />
+    <path d="M 68,-65 Q 85,-85 70,-105 Q 55,-125 30,-132" stroke="#1c110a" stroke-width="2.5" fill="none" stroke-linecap="round" />
+    <path d="M -50,-115 Q -40,-138 -15,-135" stroke="#1c110a" stroke-width="2" fill="none" stroke-linecap="round" />
+    <path d="M 50,-115 Q 40,-138 15,-135" stroke="#1c110a" stroke-width="2" fill="none" stroke-linecap="round" />
+
+    <!-- Ears -->
+    <ellipse cx="-56" cy="-15" rx="8" ry="14" fill="url(#skin)" />
+    <ellipse cx="56" cy="-15" rx="8" ry="14" fill="url(#skin)" />
+
+    <!-- Eyeglasses (Sharp Edge Benchmark) -->
+    <g stroke="#0f172a" stroke-width="3.5" fill="none">
+      <rect x="-42" y="-32" width="34" height="24" rx="7" />
+      <rect x="8" y="-32" width="34" height="24" rx="7" />
+      <path d="M -8,-20 L 8,-20" />
+      <path d="M -42,-22 L -56,-24" />
+      <path d="M 42,-22 L 56,-24" />
+    </g>
+
+    <!-- Eyes -->
+    <circle cx="-25" cy="-20" r="4" fill="#0f172a" />
+    <circle cx="25" cy="-20" r="4" fill="#0f172a" />
+    <circle cx="-23" cy="-22" r="1.5" fill="#ffffff" />
+    <circle cx="27" cy="-22" r="1.5" fill="#ffffff" />
+
+    <!-- Smile -->
+    <path d="M -18,18 Q 0,30 18,18" stroke="#be123c" stroke-width="3" stroke-linecap="round" fill="none" />
+  </g>
+
+  <!-- SPLIT LINE -->
+  <line x1="600" y1="0" x2="600" y2="560" stroke="#ffffff" stroke-width="3" stroke-dasharray="8 6" opacity="0.9" />
+  <line x1="600" y1="0" x2="600" y2="560" stroke="#10b981" stroke-width="2" opacity="0.8" />
+
+  <!-- Center Slider Knob -->
+  <g transform="translate(600, 280)">
+    <circle cx="0" cy="0" r="26" fill="#ffffff" filter="url(#portrait-shadow)" stroke="#10b981" stroke-width="3" />
+    <path d="M -8,0 L -3,-5 L -3,-2 L 3,-2 L 3,-5 L 8,0 L 3,5 L 3,2 L -3,2 L -3,5 Z" fill="#0f172a" />
+  </g>
+
+  <!-- LABEL BADGES -->
+  <g transform="translate(60, 48)">
+    <rect width="210" height="42" rx="21" fill="#0f172a" fill-opacity="0.75" />
+    <circle cx="26" cy="21" r="8" fill="#f59e0b" />
+    <text x="46" y="26" fill="#ffffff" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" letter-spacing="0.5">ORIGINAL PHOTO</text>
+  </g>
+
+  <g transform="translate(850, 48)">
+    <rect width="290" height="42" rx="21" fill="#047857" fill-opacity="0.92" filter="url(#portrait-shadow)" />
+    <circle cx="26" cy="21" r="8" fill="#34d399" />
+    <text x="46" y="26" fill="#ffffff" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" letter-spacing="0.5">CUTOUT • TRANSPARENT PNG</text>
+  </g>
+</svg>

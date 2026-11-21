@@ -2,7 +2,8 @@
 
 import React, { useRef } from 'react';
 import { BackgroundSettings } from '@/lib/types';
-import { Image as ImageIcon, Sliders, Palette, Check } from 'lucide-react';
+import { Image as ImageIcon, Sliders, Palette, Check, Upload } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n-context';
 
 interface BackgroundPickerProps {
   settings: BackgroundSettings;
@@ -22,6 +23,7 @@ const COLOR_PRESETS = [
 ];
 
 export const BackgroundPicker: React.FC<BackgroundPickerProps> = ({ settings, onChange }) => {
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleCustomImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,7 +43,7 @@ export const BackgroundPicker: React.FC<BackgroundPickerProps> = ({ settings, on
       <div className="flex items-center justify-between">
         <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
           <Palette className="w-3.5 h-3.5" />
-          Background Replacement
+          {t.backgroundReplacement}
         </h4>
       </div>
 
@@ -56,7 +58,7 @@ export const BackgroundPicker: React.FC<BackgroundPickerProps> = ({ settings, on
               : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
           }`}
         >
-          Transparent
+          {t.transparent}
         </button>
         <button
           type="button"
@@ -67,7 +69,7 @@ export const BackgroundPicker: React.FC<BackgroundPickerProps> = ({ settings, on
               : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
           }`}
         >
-          Solid Color
+          {t.solidColor}
         </button>
         <button
           type="button"
@@ -78,7 +80,7 @@ export const BackgroundPicker: React.FC<BackgroundPickerProps> = ({ settings, on
               : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
           }`}
         >
-          Custom Photo
+          {t.customPhoto}
         </button>
       </div>
 
@@ -102,7 +104,7 @@ export const BackgroundPicker: React.FC<BackgroundPickerProps> = ({ settings, on
                   {isSelected && (
                     <Check
                       className={`w-3.5 h-3.5 ${
-                        preset.color === '#ffffff' || preset.color === '#fed7aa' || preset.color === '#f3f4f6'
+                        preset.color === '#ffffff' || preset.color === '#f3f4f6' || preset.color === '#fed7aa'
                           ? 'text-gray-900'
                           : 'text-white'
                       }`}
@@ -111,68 +113,79 @@ export const BackgroundPicker: React.FC<BackgroundPickerProps> = ({ settings, on
                 </button>
               );
             })}
+          </div>
 
-            {/* Custom Color Input */}
-            <div className="relative flex items-center">
-              <input
-                type="color"
-                value={settings.color || '#ffffff'}
-                onChange={(e) => onChange({ ...settings, color: e.target.value })}
-                className="w-7 h-7 rounded-full overflow-hidden border border-gray-300 dark:border-gray-600 cursor-pointer p-0 bg-transparent"
-                title="Choose custom color"
-              />
-            </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={settings.color}
+              onChange={(e) => onChange({ ...settings, color: e.target.value })}
+              className="w-8 h-8 rounded-lg cursor-pointer border border-gray-300 dark:border-gray-700 p-0.5 bg-transparent"
+            />
+            <span className="text-xs font-mono text-gray-600 dark:text-gray-400 uppercase">
+              {settings.color}
+            </span>
           </div>
         </div>
       )}
 
-      {/* Custom Image Background Options */}
+      {/* Custom Photo Options */}
       {settings.type === 'image' && (
         <div className="space-y-3 pt-1">
           <input
-            ref={fileInputRef}
             type="file"
+            ref={fileInputRef}
             accept="image/*"
-            className="hidden"
             onChange={handleCustomImageUpload}
+            className="hidden"
           />
 
-          <div className="flex items-center gap-3">
+          {settings.customImageUrl ? (
+            <div className="space-y-2">
+              <div className="relative aspect-video rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+                <img
+                  src={settings.customImageUrl}
+                  alt="Custom background preview"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full py-2 text-xs font-semibold rounded-xl border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center justify-center gap-1.5"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                {t.uploadBackground}
+              </button>
+            </div>
+          ) : (
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-200 transition-colors"
+              className="w-full py-6 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-brand-500 text-xs font-semibold text-gray-600 dark:text-gray-400 flex flex-col items-center justify-center gap-2 transition-colors"
             >
-              <ImageIcon className="w-3.5 h-3.5" />
-              {settings.customImageUrl ? 'Replace Background' : 'Upload Background'}
+              <ImageIcon className="w-6 h-6 text-gray-400" />
+              <span>{t.uploadBackground}</span>
             </button>
-
-            {settings.customImageUrl && (
-              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                Photo applied
-              </span>
-            )}
-          </div>
+          )}
 
           {/* Background Blur Slider */}
-          {settings.customImageUrl && (
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
-                <span className="flex items-center gap-1">
-                  <Sliders className="w-3 h-3" /> Blur Effect
-                </span>
-                <span>{settings.blur}px</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="20"
-                value={settings.blur}
-                onChange={(e) => onChange({ ...settings, blur: Number(e.target.value) })}
-                className="w-full accent-brand-500 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg cursor-pointer"
-              />
+          <div className="space-y-1 pt-2">
+            <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+              <span className="flex items-center gap-1">
+                <Sliders className="w-3 h-3" /> {t.blurEffect}
+              </span>
+              <span>{settings.blur || 0}px</span>
             </div>
-          )}
+            <input
+              type="range"
+              min="0"
+              max="24"
+              value={settings.blur || 0}
+              onChange={(e) => onChange({ ...settings, blur: Number(e.target.value) })}
+              className="w-full accent-brand-500 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg cursor-pointer"
+            />
+          </div>
         </div>
       )}
     </div>

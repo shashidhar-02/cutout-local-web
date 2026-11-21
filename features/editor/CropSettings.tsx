@@ -3,6 +3,7 @@
 import React from 'react';
 import { Crop, Sliders } from 'lucide-react';
 import { CropSettings as ICropSettings } from '@/lib/types';
+import { useTranslation } from '@/lib/i18n-context';
 
 interface CropSettingsProps {
   settings: ICropSettings;
@@ -10,6 +11,8 @@ interface CropSettingsProps {
 }
 
 export const CropSettings: React.FC<CropSettingsProps> = ({ settings, onChange }) => {
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-3 p-4 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm">
       <div className="flex items-center justify-between">
@@ -22,7 +25,7 @@ export const CropSettings: React.FC<CropSettingsProps> = ({ settings, onChange }
           />
           <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
             <Crop className="w-3.5 h-3.5" />
-            Auto Crop (Trim Transparent Edges)
+            {t.autoCrop}
           </span>
         </label>
       </div>
@@ -31,7 +34,7 @@ export const CropSettings: React.FC<CropSettingsProps> = ({ settings, onChange }
         <div className="space-y-1.5 pt-1">
           <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
             <span className="flex items-center gap-1">
-              <Sliders className="w-3 h-3" /> Edge Padding
+              <Sliders className="w-3 h-3" /> {t.cropPadding}
             </span>
             <span>{settings.padding}px</span>
           </div>
